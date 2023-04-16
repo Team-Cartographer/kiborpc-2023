@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 import pupil_apriltags as p
 
-#TAG = 'exampleTag.png'
+#TAG = 'exampleTag.png' ##
 TAG = 'tagformats_web.png'
 tag_family = 'tag16h5'
 detector = p.Detector(families=tag_family, nthreads=10)
