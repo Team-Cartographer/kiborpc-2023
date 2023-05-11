@@ -1,3 +1,19 @@
-/.idea
-Kibo-RPC.iml
+# OS X randomness
+.DS_Store
 
+# build products
+build/
+out/
+
+# IntelliJ
+Kibo-RPC.iml
+.idea/
+*.iml
+
+# Vim swap files
+.*.sw*
+
+# gradle
+.gradle/
+.gradletasknamecache
+local.properties
