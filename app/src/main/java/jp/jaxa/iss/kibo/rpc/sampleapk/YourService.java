@@ -28,7 +28,8 @@ public class YourService extends KiboRpcService {
             // move to a point
             Point point = new Point(10.4d, -10.1d, 4.47d);
             Quaternion quaternion = new Quaternion(0f, 0f, 0f, 1f);
-            api.moveTo(point, quaternion, false);
+            api.moveTo(point, quaternion, true);
+
 
             // get a camera image
             Mat image = api.getMatNavCam();
