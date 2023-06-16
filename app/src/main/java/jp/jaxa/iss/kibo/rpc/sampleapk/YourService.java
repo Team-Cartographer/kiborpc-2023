@@ -7,6 +7,7 @@ import gov.nasa.arc.astrobee.Result;
 import gov.nasa.arc.astrobee.android.gs.MessageType;
 import gov.nasa.arc.astrobee.types.Point;
 import gov.nasa.arc.astrobee.types.Quaternion;
+import android.util.Log;
 
 import org.opencv.core.Mat;
 
@@ -15,6 +16,53 @@ import org.opencv.core.Mat;
  */
 
 public class YourService extends KiboRpcService {
+
+    private final String TAG = "CARTOGRAPHER";
+
+    private boolean moveTo(double pos_x, double pos_y, double pos_z,
+                                  double qua_x, double qua_y, double qua_z,
+                                  double qua_w) {
+        final int LOOP_MAX = 10; // failsafe system inspired by Indonesia team
+        final Point point = new Point(pos_x, pos_y, pos_z);
+        final Quaternion quaternion = new Quaternion((float) qua_x, (float) qua_y,
+                (float) qua_z, (float) qua_w);
+
+
+        Log.i(TAG, "[0] Calling moveTo function ");
+        Log.i(TAG, pos_x + " " + pos_y + " " + pos_z);
+        long start = System.currentTimeMillis();
+
+        Result result = api.moveTo(point, quaternion, true);
+
+        long end = System.currentTimeMillis();
+        long elapsedTime = end - start;
+        Log.i(TAG, "[0] moveTo finished in : " + elapsedTime/1000 + " seconds");
+        Log.i(TAG, "[0] hasSucceeded : " + result.hasSucceeded());
+        Log.i(TAG, "[0] getStatus : " + result.getStatus().toString());
+        Log.i(TAG, "[0] getMessage : " + result.getMessage());
+
+        int loopCounter = 1;
+        while (!result.hasSucceeded() && loopCounter <= LOOP_MAX) {
+
+            Log.i(TAG, "[" + loopCounter + "] " + "Calling moveTo function");
+            start = System.currentTimeMillis();
+
+            result = api.moveTo(point, quaternion, true);
+
+            end = System.currentTimeMillis();
+            elapsedTime = end - start;
+            Log.i(TAG, "[" + loopCounter + "] " + "moveTo finished in : " + elapsedTime/1000 +
+                    " seconds");
+            Log.i(TAG, "[" + loopCounter + "] " + "hasSucceeded : " + result.hasSucceeded());
+            Log.i(TAG, "[" + loopCounter + "] " + "getStatus : " + result.getStatus().toString());
+            Log.i(TAG, "[" + loopCounter + "] " + "getMessage : " + result.getMessage());
+
+            ++loopCounter;
+
+        }
+        return true;
+    }
+
     @Override
     protected void runPlan1(){
         // the mission starts
@@ -26,9 +74,7 @@ public class YourService extends KiboRpcService {
             List<Integer> list = api.getActiveTargets();
 
             // move to a point
-            Point point = new Point(10.4d, -10.1d, 4.47d);
-            Quaternion quaternion = new Quaternion(0f, 0f, 0f, 1f);
-            api.moveTo(point, quaternion, true);
+            moveTo(10.4d, -10d, 4.5d, 0f, 0f, 0f, 1f);
 
 
             // get a camera image
