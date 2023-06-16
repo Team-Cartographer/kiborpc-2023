@@ -6,5 +6,5 @@ import java.util.List;
 
 public class ImageUtils {
     public ImageUtils(){}
-    
+
 }
