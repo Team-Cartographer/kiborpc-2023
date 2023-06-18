@@ -78,6 +78,48 @@ public class YourService extends KiboRpcService {
         }
     }
 
+    /**
+     * Wrapper function for api.moveTo(point, quaternion, boolean) to make a fail-safe
+     * in case initial movement fails, and log movement details.
+     * @param point the Point to move to
+     * @param quaternion the Quaternion to orient angles to
+     */
+    private void moveTo(Point point, Quaternion quaternion) {
+        final int LOOP_MAX = 10;
+
+        Log.i(TAG, "[0] Calling moveTo function ");
+        Log.i(TAG, point.getX() + ", " + point.getY() + ", " + point.getZ());
+        long start = System.currentTimeMillis();
+
+        Result result = api.moveTo(point, quaternion, true);
+
+        long end = System.currentTimeMillis();
+        long elapsedTime = end - start;
+        Log.i(TAG, "[0] moveTo finished in : " + elapsedTime/1000 + " seconds");
+        Log.i(TAG, "[0] hasSucceeded : " + result.hasSucceeded());
+        Log.i(TAG, "[0] getStatus : " + result.getStatus().toString());
+        Log.i(TAG, "[0] getMessage : " + result.getMessage());
+
+        int loopCounter = 1;
+        while (!result.hasSucceeded() && loopCounter <= LOOP_MAX) {
+
+            Log.i(TAG, "[" + loopCounter + "] " + "Calling moveTo function");
+            start = System.currentTimeMillis();
+
+            result = api.moveTo(point, quaternion, true);
+
+            end = System.currentTimeMillis();
+            elapsedTime = end - start;
+            Log.i(TAG, "[" + loopCounter + "] " + "moveTo finished in : " + elapsedTime / 1000 +
+                    " seconds");
+            Log.i(TAG, "[" + loopCounter + "] " + "hasSucceeded : " + result.hasSucceeded());
+            Log.i(TAG, "[" + loopCounter + "] " + "getStatus : " + result.getStatus().toString());
+            Log.i(TAG, "[" + loopCounter + "] " + "getMessage : " + result.getMessage());
+
+            ++loopCounter;
+        }
+    }
+
 
     //TODO the method below is for image processing which comes with laser detection
     /**
@@ -133,7 +175,8 @@ public class YourService extends KiboRpcService {
             Log.d(TAG, targets.toString().substring(1, targets.toString().length() - 1));
 
             // move to a point
-            moveTo(10.4d, -10d, 4.5d, 0f, 0f, 0f, 1f);
+            //moveTo(10.4d, -10d, 4.5d, 0f, 0f, 0f, 1f);
+            moveTo(Constants.pointThree.getPoint(), Constants.pointThree.getQuaternion());
 
             // get a camera image
             Mat image = api.getMatNavCam();
