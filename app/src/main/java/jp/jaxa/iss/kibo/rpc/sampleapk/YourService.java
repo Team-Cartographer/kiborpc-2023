@@ -248,7 +248,7 @@ public class YourService extends KiboRpcService {
                     break;
             }
         } catch(Exception e) {
-            Log.i(TAG, "QR Code Content was Never Found!\nUsing a error String instead.");
+            Log.i(TAG, "QR Code Content was Never Found!\nUsing an error String instead.");
         }
 
         // turn off the front flash light
