@@ -3,13 +3,20 @@ package jp.jaxa.iss.kibo.rpc.sampleapk;
 import jp.jaxa.iss.kibo.rpc.api.KiboRpcService;
 
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Arrays;
 import gov.nasa.arc.astrobee.Result;
 import gov.nasa.arc.astrobee.types.Point;
 import gov.nasa.arc.astrobee.types.Quaternion;
 import android.util.Log;
 
+import org.opencv.aruco.DetectorParameters;
+import org.opencv.aruco.Dictionary;
 import org.opencv.core.CvType;
+import org.opencv.aruco.Aruco;
 import org.opencv.core.Mat;
+import org.opencv.core.Size;
+import org.opencv.imgproc.Imgproc;
 
 /**
  * Class meant to handle commands from the Ground Data System and execute them in Astrobee
@@ -17,12 +24,16 @@ import org.opencv.core.Mat;
 
 public class YourService extends KiboRpcService {
 
-    private Mat camMat;
-    private Mat distCoef;
+    private Mat
+            camMat,
+            distCoef,
+            map1,
+            map2;
 
-    final String TAG = "CARTOGRAPHER";
-    final String SIM = "Simulator";
-    final String IRL = "Orbit"; // IRL -> 'In Real Life'
+    final String
+            TAG = "CARTOGRAPHER",
+            SIM = "Simulator",
+            IRL = "Orbit"; // IRL -> 'In Real Life'
 
     /**
      * Wrapper function for api.moveTo(point, quaternion, boolean) to make a fail-safe
@@ -158,6 +169,8 @@ public class YourService extends KiboRpcService {
             distCoef.put(0,0, distortionCoefficients);
         }
         Log.i(TAG, "Initialized Camera Matrices in Mode: " + mode);
+        Imgproc.initUndistortRectifyMap(camMat, distCoef, new Mat(), camMat, new Size(1280, 960), CvType.CV_16SC2, map1, map2);
+        Log.i(TAG, "Created Un-distortion Map Filters");
     }
 
     @Override
@@ -231,6 +244,60 @@ public class YourService extends KiboRpcService {
     protected void runPlan3(){
         // write your plan 3 here
     }
+
+    /**
+     * Processes NavCam Matrix and Scans for AprilTags within NavCam
+     * @return the ID of the Target found in the NavCam, and 0 if none found.
+     */
+    private int getTagInfo(){
+        Log.i(TAG, "Calling getTagInfo() function");
+        long start = System.currentTimeMillis();
+
+        Mat undistorted = new Mat(),
+                ids = new Mat();
+
+        api.flashlightControlFront(0.05f); // enable flashlight for tag read clarity
+        Mat distorted = api.getMatNavCam();
+        api.flashlightControlFront(0.0f);
+
+        // TODO test with `Imgproc.INTER_NEAREST` for speed's sake?
+        Imgproc.remap(distorted, undistorted, map1, map2, Imgproc.INTER_LINEAR);
+        Log.i(TAG, "Re-mapped Camera with Distortion Filter");
+
+        Dictionary dict = Aruco.getPredefinedDictionary(Aruco.DICT_5X5_250);
+        DetectorParameters detParams = DetectorParameters.create();
+
+        List<Mat> corners = new ArrayList<>();
+        Aruco.detectMarkers(undistorted, dict, corners, ids, detParams);
+
+        List<Integer> markerIds = new ArrayList<>();
+        for(int i = 0; i < ids.rows(); i++){
+            for(int j = 0; j < ids.cols(); j++){
+                double[] idData = ids.get(i, j);
+                int id = (int) idData[0];
+                markerIds.add(id); }}
+
+        if (markerIds.containsAll(Arrays.asList(1, 2, 3, 4))){return 1;}
+        if (markerIds.containsAll(Arrays.asList(5, 6, 7, 8))){return 2;}
+        if (markerIds.containsAll(Arrays.asList(9, 10, 11, 12))) {return 3;}
+        if (markerIds.containsAll(Arrays.asList(13, 14, 15, 16))) {return 4;}
+        if (markerIds.containsAll(Arrays.asList(17, 18, 19, 20))) {return 5;}
+        if (markerIds.containsAll(Arrays.asList(21, 22, 23, 24))) {return 6;}
+
+        long delta = (System.currentTimeMillis() - start)/1000;
+        Log.i(TAG, "Read AprilTags in " + delta + " seconds");
+
+        return 0;
+    }
+
+    private void scanQRCode(){
+        Mat QR = api.getMatNavCam();
+
+        //boolean success = decodeQR
+
+        //TODO finish this
+    }
+
 
     // You can add your method
     private String getQRContent(){
