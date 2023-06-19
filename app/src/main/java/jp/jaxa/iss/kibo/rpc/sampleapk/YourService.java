@@ -17,6 +17,8 @@ import org.opencv.aruco.Aruco;
 import org.opencv.core.Mat;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
+import org.opencv.objdetect.QRCodeDetector;
+
 
 /**
  * Class meant to handle commands from the Ground Data System and execute them in Astrobee
@@ -218,7 +220,36 @@ public class YourService extends KiboRpcService {
         api.flashlightControlFront(0.05f);
         
         // get QR code content
-        String mQrContent = getQRContent();
+        String mQrContent = "No QR Code Content was Found";
+        try {
+            mQrContent = getQRContentBuffer();
+
+            switch (mQrContent) {
+                case "JEM":
+                    mQrContent = "STAY_AT_JEM";
+                    break;
+                case "COLUMBUS":
+                    mQrContent = "GO_TO_COLUMBUS";
+                    break;
+                case "RACK1":
+                    mQrContent = "CHECK_RACK_1";
+                    break;
+                case "ASTROBEE":
+                    mQrContent = "I_AM_HERE";
+                    break;
+                case "INTBALL":
+                    mQrContent = "LOOKING_FORWARD_TO_SEE_YOU";
+                    break;
+                case "BLANK":
+                    mQrContent = "NO_PROBLEM";
+                    break;
+                default:
+                    /* do nothing */
+                    break;
+            }
+        } catch(Exception e) {
+            Log.i(TAG, "QR Code Content was Never Found!\nUsing a error String instead.");
+        }
 
         // turn off the front flash light
         api.flashlightControlFront(0.00f);
@@ -278,11 +309,11 @@ public class YourService extends KiboRpcService {
                 markerIds.add(id); }}
 
         if (markerIds.containsAll(Arrays.asList(1, 2, 3, 4))){return 1;}
-        if (markerIds.containsAll(Arrays.asList(5, 6, 7, 8))){return 2;}
-        if (markerIds.containsAll(Arrays.asList(9, 10, 11, 12))) {return 3;}
-        if (markerIds.containsAll(Arrays.asList(13, 14, 15, 16))) {return 4;}
-        if (markerIds.containsAll(Arrays.asList(17, 18, 19, 20))) {return 5;}
-        if (markerIds.containsAll(Arrays.asList(21, 22, 23, 24))) {return 6;}
+        else if (markerIds.containsAll(Arrays.asList(5, 6, 7, 8))){return 2;}
+        else if (markerIds.containsAll(Arrays.asList(9, 10, 11, 12))) {return 3;}
+        else if (markerIds.containsAll(Arrays.asList(13, 14, 15, 16))) {return 4;}
+        else if (markerIds.containsAll(Arrays.asList(17, 18, 19, 20))) {return 5;}
+        else if (markerIds.containsAll(Arrays.asList(21, 22, 23, 24))) {return 6;}
 
         long delta = (System.currentTimeMillis() - start)/1000;
         Log.i(TAG, "Read AprilTags in " + delta + " seconds");
@@ -290,17 +321,52 @@ public class YourService extends KiboRpcService {
         return 0;
     }
 
-    private void scanQRCode(){
-        Mat QR = api.getMatNavCam();
+    /**
+     * Scans NavCam Mat for a QR Code
+     * @param QR the NavCam Mat with a QR Code in the image.
+     * @return QR Code Content as a String
+     */
+    private String scanQRCode(Mat QR){
+        QRCodeDetector detector = new QRCodeDetector();
+        String qrData = detector.detectAndDecode(QR);
 
-        //boolean success = decodeQR
+        if(!qrData.isEmpty()){
+            Log.i(TAG, "QR Code Data: " + qrData);
+            return qrData;
+        }
+        else{
+            Log.i(TAG, "QR Code Detection Failed.");
+        }
 
-        //TODO finish this
+        return null;
     }
 
+    private int getTagContentBuffer(){
+        //TODO finish this with getTagInfo();
+        return 0;
+    }
 
-    // You can add your method
-    private String getQRContent(){
-        return "null_temp";
+    private String getQRContentBuffer(){
+        int LOOP_MAX = 10;
+        api.flashlightControlFront(0.05f);
+        Mat
+                distorted = api.getMatNavCam(),
+                QR = new Mat();
+        api.flashlightControlFront(0.00f);
+
+        Imgproc.remap(distorted, QR, map1, map2, Imgproc.INTER_LINEAR);
+        String data = scanQRCode(QR);
+
+        int loopcounter = 0;
+        while(data == null && loopcounter <= LOOP_MAX){
+            data = scanQRCode(QR);
+
+            if(data != null){
+                return data;
+            }
+
+            loopcounter++;
+        }
+        return null;
     }
 }
