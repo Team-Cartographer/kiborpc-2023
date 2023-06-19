@@ -41,6 +41,7 @@ public class Constants {
             new Point(11.369, -8.5518, 4.48), new Quaternion(0f, 0.707f, 0f, 0.707f)
     );
 
+    // TODO figure out what the target Coordinates really mean on the map!
     public static final Coordinate targetOne = new Coordinate(
             new Point(11.2625, -10.58, 5.3625), new Quaternion(0.707f, 0f, 0f, 0.707f)
     );
@@ -68,20 +69,47 @@ public class Constants {
     public static final Coordinate QRCode = new Coordinate(
             new Point(11.381944, -8.566172, 3.76203), new Quaternion(0f, 0f, 0f, 1f)
     );
+
+    public static final LaserTarget TARGET_ONE = new LaserTarget(5);
+    public static final LaserTarget TARGET_TWO = new LaserTarget(6);
+    public static final LaserTarget TARGET_THREE = new LaserTarget(4);
+    public static final LaserTarget TARGET_FOUR  = new LaserTarget(6);
+    public static final LaserTarget TARGET_FIVE = new LaserTarget(5);
+    public static final LaserTarget TARGET_SIX = new LaserTarget(5);
 }
 
 class Coordinate {
     private Point point;
     private Quaternion quaternion;
 
-    public Coordinate(Point pt, Quaternion qt) {
+    Coordinate(Point pt, Quaternion qt) {
         point = pt;
         quaternion = qt;
     }
 
-    public Point getPoint() {return point;}
-    public Quaternion getQuaternion() {return quaternion;}
+    Point getPoint() {return point;}
+    Quaternion getQuaternion() {return quaternion;}
 
     public void setPoint(Point pt) {point = pt;}
     public void setQuaternion(Quaternion qt) {quaternion = qt;}
+}
+
+class LaserTarget {
+    public float
+            height,
+            width,
+            dotRadius,
+            distEdgeToApriltag,
+            distVertCenterApriltagToCenterDot,
+            distHorizCenterApriltagToCenterDot;
+
+    // all units are in centimeters
+    LaserTarget(float dotRadius) {
+        height = 15f;
+        width = 27f;
+        distEdgeToApriltag = 1.25f;
+        distVertCenterApriltagToCenterDot = 3.75f;
+        distHorizCenterApriltagToCenterDot = 10f;
+        this.dotRadius = dotRadius;
+    }
 }
