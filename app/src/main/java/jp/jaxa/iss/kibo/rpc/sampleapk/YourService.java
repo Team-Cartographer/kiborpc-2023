@@ -86,7 +86,7 @@ public class YourService extends KiboRpcService {
             Log.i(TAG, "[" + loopCounter + "] " + "getStatus : " + result.getStatus().toString());
             Log.i(TAG, "[" + loopCounter + "] " + "getMessage : " + result.getMessage());
 
-            ++loopCounter;
+            loopCounter++;
 
         }
     }
@@ -129,7 +129,7 @@ public class YourService extends KiboRpcService {
             Log.i(TAG, "[" + loopCounter + "] " + "getStatus : " + result.getStatus().toString());
             Log.i(TAG, "[" + loopCounter + "] " + "getMessage : " + result.getMessage());
 
-            ++loopCounter;
+            loopCounter++;
         }
     }
 
@@ -213,7 +213,7 @@ public class YourService extends KiboRpcService {
             if (api.getTimeRemaining().get(1) < 60000)
                 break;
 
-            ++loops;
+            loops++;
             if (loops == 2)
                 break;
         }
