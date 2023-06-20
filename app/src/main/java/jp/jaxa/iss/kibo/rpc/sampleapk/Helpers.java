@@ -2,8 +2,9 @@ package jp.jaxa.iss.kibo.rpc.sampleapk;
 
 import gov.nasa.arc.astrobee.types.Point;
 import gov.nasa.arc.astrobee.types.Quaternion;
+import java.util.List;
 
-public class Constants {
+class Constants {
 
     public static final Coordinate start = new Coordinate(
             new Point(9.815, -9.806, 4.293), new Quaternion(1, 0, 0, 0)
@@ -76,6 +77,13 @@ public class Constants {
     public static final LaserTarget TARGET_FOUR  = new LaserTarget(6);
     public static final LaserTarget TARGET_FIVE = new LaserTarget(5);
     public static final LaserTarget TARGET_SIX = new LaserTarget(5);
+
+    public static final int[] targetOneIDs = {1, 2, 3, 4};
+    public static final int[] targetTwoIDs = {5, 6, 7, 8};
+    public static final int[] targetThreeIDs = {9, 10, 11, 12};
+    public static final int[] targetFourIDs = {13, 14, 15, 16};
+    public static final int[] targetFiveIDs = {17, 18, 19, 20};
+    public static final int[] targetSixIDs = {21, 22, 23, 24};
 }
 
 class Coordinate {
@@ -111,5 +119,16 @@ class LaserTarget {
         distVertCenterApriltagToCenterDot = 3.75f;
         distHorizCenterApriltagToCenterDot = 10f;
         this.dotRadius = dotRadius;
+    }
+}
+
+class ListUtils {
+    public static boolean containsAny(List<Integer> arrayList, int[] elements) {
+        for (int element : elements) {
+            if (arrayList.contains(element)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -1,5 +1,4 @@
 package jp.jaxa.iss.kibo.rpc.sampleapk;
-
 import jp.jaxa.iss.kibo.rpc.api.KiboRpcService;
 
 import java.util.List;
@@ -15,7 +14,7 @@ import org.opencv.aruco.Dictionary;
 import org.opencv.core.CvType;
 import org.opencv.aruco.Aruco;
 import org.opencv.core.Mat;
-import org.opencv.core.Size;
+import org.opencv.core.Rect;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.objdetect.QRCodeDetector;
 
@@ -26,11 +25,7 @@ import org.opencv.objdetect.QRCodeDetector;
 
 public class YourService extends KiboRpcService {
 
-    private Mat
-            camMat,
-            distCoef,
-            map1,
-            map2;
+    Mat camMat, distCoeff;
 
     final String
             TAG = "CARTOGRAPHER",
@@ -87,7 +82,6 @@ public class YourService extends KiboRpcService {
             Log.i(TAG, "[" + loopCounter + "] " + "getMessage : " + result.getMessage());
 
             loopCounter++;
-
         }
     }
 
@@ -141,7 +135,7 @@ public class YourService extends KiboRpcService {
      */
     private void initCam(String mode){
         camMat = new Mat(3, 3, CvType.CV_32F);
-        distCoef = new Mat(1, 5, CvType.CV_32F);
+        distCoeff = new Mat(1, 5, CvType.CV_32F);
 
         if(mode.equals(SIM)){
             // all numbers via programming manual
@@ -155,7 +149,7 @@ public class YourService extends KiboRpcService {
             };
 
             camMat.put(0, 0, camArr);
-            distCoef.put(0,0, distortionCoefficients);
+            distCoeff.put(0,0, distortionCoefficients);
         }
         else if(mode.equals(IRL)){
             float[] camArr = {
@@ -168,11 +162,9 @@ public class YourService extends KiboRpcService {
             };
 
             camMat.put(0, 0, camArr);
-            distCoef.put(0,0, distortionCoefficients);
+            distCoeff.put(0,0, distortionCoefficients);
         }
         Log.i(TAG, "Initialized Camera Matrices in Mode: " + mode);
-        Imgproc.initUndistortRectifyMap(camMat, distCoef, new Mat(), camMat, new Size(1280, 960), CvType.CV_16SC2, map1, map2);
-        Log.i(TAG, "Created Un-distortion Map Filters");
     }
 
     @Override
@@ -180,8 +172,6 @@ public class YourService extends KiboRpcService {
         // the mission starts
         api.startMission();
         initCam(SIM);
-        Log.d(TAG, camMat.dump());
-        Log.d(TAG, distCoef.dump());
 
         int loops = 0;
         while (true){
@@ -189,15 +179,12 @@ public class YourService extends KiboRpcService {
             List<Integer> targets = api.getActiveTargets();
             Log.d(TAG, targets.toString().substring(1, targets.toString().length() - 1));
 
-            // Move to Point 2 (Testing)
-            moveTo(new Point(10.515, -9.806, 4.593), new Quaternion(1f, 0f, 0f, 0f));
-            moveTo(new Point(10.412, -9.071, 4.48), new Quaternion(1f, 0f, 0f, 0f));
-
-            // get a camera image
-            Mat image = api.getMatNavCam();
-
-            // irradiate the laser
-            api.laserControl(true);
+            // Move to Point 6 (Testing)
+            moveTo(new Point(10.515, -9.806, 4.593),
+                    new Quaternion(1f, 0f, 0f, 0f));
+            moveTo(new Point(10.412, -9.071, 4.48),
+                    new Quaternion(1f, 0f, 0f, 0f));
+            getTagInfo(6);
 
             // take active target snapshots
             int target_id = 1;
@@ -219,37 +206,38 @@ public class YourService extends KiboRpcService {
         // turn on the front flash light
         api.flashlightControlFront(0.05f);
         
-        // get QR code content
-        String mQrContent = "No QR Code Content was Found";
-        try {
-            mQrContent = getQRContentBuffer();
-
-            switch (mQrContent) {
-                case "JEM":
-                    mQrContent = "STAY_AT_JEM";
-                    break;
-                case "COLUMBUS":
-                    mQrContent = "GO_TO_COLUMBUS";
-                    break;
-                case "RACK1":
-                    mQrContent = "CHECK_RACK_1";
-                    break;
-                case "ASTROBEE":
-                    mQrContent = "I_AM_HERE";
-                    break;
-                case "INTBALL":
-                    mQrContent = "LOOKING_FORWARD_TO_SEE_YOU";
-                    break;
-                case "BLANK":
-                    mQrContent = "NO_PROBLEM";
-                    break;
-                default:
-                    /* do nothing */
-                    break;
-            }
-        } catch(Exception e) {
-            Log.i(TAG, "QR Code Content was Never Found!\nUsing an error String instead.");
-        }
+        // get QR code content (Temporarily Disabled)
+          String mQrContent = "No QR Code Content was Found";
+//        try {
+//            mQrContent = getQRContentBuffer();
+//
+//            switch (mQrContent) {
+//                case "JEM":
+//                    mQrContent = "STAY_AT_JEM";
+//                    break;
+//                case "COLUMBUS":
+//                    mQrContent = "GO_TO_COLUMBUS";
+//                    break;
+//                case "RACK1":
+//                    mQrContent = "CHECK_RACK_1";
+//                    break;
+//                case "ASTROBEE":
+//                    mQrContent = "I_AM_HERE";
+//                    break;
+//                case "INTBALL":
+//                    mQrContent = "LOOKING_FORWARD_TO_SEE_YOU";
+//                    break;
+//                case "BLANK":
+//                    mQrContent = "NO_PROBLEM";
+//                    break;
+//                default:
+//                    /* do nothing */
+//                    break;
+//            }
+//        } catch(Exception e) {
+//            Log.i(TAG, "QR Code Content was Never Found!\nUsing an error String instead.");
+//        }
+        Log.i(TAG, "QR Content: " + mQrContent);
 
         // turn off the front flash light
         api.flashlightControlFront(0.00f);
@@ -280,7 +268,7 @@ public class YourService extends KiboRpcService {
      * Processes NavCam Matrix and Scans for AprilTags within NavCam
      * @return the ID of the Target found in the NavCam, and 0 if none found.
      */
-    private int getTagInfo(){
+    private int getTagInfo(int find){
         Log.i(TAG, "Calling getTagInfo() function");
         long start = System.currentTimeMillis();
 
@@ -292,14 +280,20 @@ public class YourService extends KiboRpcService {
         api.flashlightControlFront(0.0f);
 
         // TODO test with `Imgproc.INTER_NEAREST` for speed's sake?
-        Imgproc.remap(distorted, undistorted, map1, map2, Imgproc.INTER_LINEAR);
-        Log.i(TAG, "Re-mapped Camera with Distortion Filter");
+        Imgproc.undistort(distorted, undistorted, camMat, distCoeff);
+        Log.i(TAG, "Undistorted Image Successfully");
+        Log.i(TAG, "Looking for Target #" + find);
+
+        Rect ROI = new Rect(371, 261, 454, 256);
+        undistorted = new Mat(undistorted, ROI);
+
+        api.saveMatImage(undistorted, "TEST_IMG");
 
         Dictionary dict = Aruco.getPredefinedDictionary(Aruco.DICT_5X5_250);
         DetectorParameters detParams = DetectorParameters.create();
+        List<Mat> detectedMarkers = new ArrayList<>();
 
-        List<Mat> corners = new ArrayList<>();
-        Aruco.detectMarkers(undistorted, dict, corners, ids, detParams);
+        Aruco.detectMarkers(undistorted, dict, detectedMarkers, ids, detParams);
 
         List<Integer> markerIds = new ArrayList<>();
         for(int i = 0; i < ids.rows(); i++){
@@ -307,18 +301,21 @@ public class YourService extends KiboRpcService {
                 double[] idData = ids.get(i, j);
                 int id = (int) idData[0];
                 markerIds.add(id); }}
+        Log.i(TAG, "Marker IDs Found: " + markerIds.toString());
 
-        if (markerIds.containsAll(Arrays.asList(1, 2, 3, 4))){return 1;}
-        else if (markerIds.containsAll(Arrays.asList(5, 6, 7, 8))){return 2;}
-        else if (markerIds.containsAll(Arrays.asList(9, 10, 11, 12))) {return 3;}
-        else if (markerIds.containsAll(Arrays.asList(13, 14, 15, 16))) {return 4;}
-        else if (markerIds.containsAll(Arrays.asList(17, 18, 19, 20))) {return 5;}
-        else if (markerIds.containsAll(Arrays.asList(21, 22, 23, 24))) {return 6;}
+        int target = 0;
+        if (ListUtils.containsAny(markerIds, Constants.targetOneIDs)){target = 1;}
+        else if (ListUtils.containsAny(markerIds, Constants.targetTwoIDs)){target = 2;}
+        else if (ListUtils.containsAny(markerIds, Constants.targetThreeIDs)) {target = 3;}
+        else if (ListUtils.containsAny(markerIds, Constants.targetFourIDs)) {target = 4;}
+        else if (ListUtils.containsAny(markerIds, Constants.targetFiveIDs)) {target = 5;}
+        else if (ListUtils.containsAny(markerIds, Constants.targetSixIDs)) {target = 6;}
 
         long delta = (System.currentTimeMillis() - start)/1000;
+        Log.i(TAG, "Found Target #" + target + "; Found Intended Target: " + (target == find));
         Log.i(TAG, "Read AprilTags in " + delta + " seconds");
 
-        return 0;
+        return target;
     }
 
     /**
@@ -334,10 +331,8 @@ public class YourService extends KiboRpcService {
             Log.i(TAG, "QR Code Data: " + qrData);
             return qrData;
         }
-        else{
+        else
             Log.i(TAG, "QR Code Detection Failed.");
-        }
-
         return null;
     }
 
@@ -354,18 +349,17 @@ public class YourService extends KiboRpcService {
                 QR = new Mat();
         api.flashlightControlFront(0.00f);
 
-        Imgproc.remap(distorted, QR, map1, map2, Imgproc.INTER_LINEAR);
+        Imgproc.undistort(distorted, QR, camMat, distCoeff);
         String data = scanQRCode(QR);
 
-        int loopcounter = 0;
-        while(data == null && loopcounter <= LOOP_MAX){
+        int loopCounter = 0;
+        while(data == null && loopCounter <= LOOP_MAX){
             data = scanQRCode(QR);
 
-            if(data != null){
+            if(data != null)
                 return data;
-            }
 
-            loopcounter++;
+            loopCounter++;
         }
         return null;
     }
