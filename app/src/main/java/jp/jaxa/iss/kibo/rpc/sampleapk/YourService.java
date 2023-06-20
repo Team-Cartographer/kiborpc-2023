@@ -287,7 +287,7 @@ public class YourService extends KiboRpcService {
         Rect ROI = new Rect(371, 261, 454, 256);
         undistorted = new Mat(undistorted, ROI);
 
-        api.saveMatImage(undistorted, "TEST_IMG");
+        api.saveMatImage(undistorted, "TEST_IMG.png");
 
         Dictionary dict = Aruco.getPredefinedDictionary(Aruco.DICT_5X5_250);
         DetectorParameters detParams = DetectorParameters.create();
