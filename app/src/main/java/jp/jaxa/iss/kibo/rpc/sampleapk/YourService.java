@@ -3,7 +3,6 @@ import jp.jaxa.iss.kibo.rpc.api.KiboRpcService;
 
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Arrays;
 import gov.nasa.arc.astrobee.Result;
 import gov.nasa.arc.astrobee.types.Point;
 import gov.nasa.arc.astrobee.types.Quaternion;
@@ -176,15 +175,18 @@ public class YourService extends KiboRpcService {
         int loops = 0;
         while (true){
             // get the list of active target id
-            List<Integer> targets = api.getActiveTargets();
-            Log.d(TAG, targets.toString().substring(1, targets.toString().length() - 1));
+            List<Integer> activeTargets = api.getActiveTargets();
+            Log.i(TAG, activeTargets.toString());
 
             // Move to Point 6 (Testing)
             moveTo(new Point(10.515, -9.806, 4.593),
                     new Quaternion(1f, 0f, 0f, 0f));
             moveTo(new Point(10.412, -9.071, 4.48),
                     new Quaternion(1f, 0f, 0f, 0f));
-            getTagInfo(6);
+            int foundTarget = getTagInfo();
+            if(activeTargets.contains(foundTarget)){
+                targetLaser(foundTarget);
+            }
 
             // take active target snapshots
             int target_id = 1;
@@ -208,35 +210,35 @@ public class YourService extends KiboRpcService {
         
         // get QR code content (Temporarily Disabled)
           String mQrContent = "No QR Code Content was Found";
-//        try {
-//            mQrContent = getQRContentBuffer();
-//
-//            switch (mQrContent) {
-//                case "JEM":
-//                    mQrContent = "STAY_AT_JEM";
-//                    break;
-//                case "COLUMBUS":
-//                    mQrContent = "GO_TO_COLUMBUS";
-//                    break;
-//                case "RACK1":
-//                    mQrContent = "CHECK_RACK_1";
-//                    break;
-//                case "ASTROBEE":
-//                    mQrContent = "I_AM_HERE";
-//                    break;
-//                case "INTBALL":
-//                    mQrContent = "LOOKING_FORWARD_TO_SEE_YOU";
-//                    break;
-//                case "BLANK":
-//                    mQrContent = "NO_PROBLEM";
-//                    break;
-//                default:
-//                    /* do nothing */
-//                    break;
-//            }
-//        } catch(Exception e) {
-//            Log.i(TAG, "QR Code Content was Never Found!\nUsing an error String instead.");
-//        }
+        try {
+            mQrContent = getQRContentBuffer();
+
+            switch (mQrContent) {
+                case "JEM":
+                    mQrContent = "STAY_AT_JEM";
+                    break;
+                case "COLUMBUS":
+                    mQrContent = "GO_TO_COLUMBUS";
+                    break;
+                case "RACK1":
+                    mQrContent = "CHECK_RACK_1";
+                    break;
+                case "ASTROBEE":
+                    mQrContent = "I_AM_HERE";
+                    break;
+                case "INTBALL":
+                    mQrContent = "LOOKING_FORWARD_TO_SEE_YOU";
+                    break;
+                case "BLANK":
+                    mQrContent = "NO_PROBLEM";
+                    break;
+                default:
+                    /* do nothing */
+                    break;
+            }
+        } catch(Exception e) {
+            Log.i(TAG, "QR Code Content was Never Found!\nUsing an error String instead.");
+        }
         Log.i(TAG, "QR Content: " + mQrContent);
 
         // turn off the front flash light
@@ -268,7 +270,7 @@ public class YourService extends KiboRpcService {
      * Processes NavCam Matrix and Scans for AprilTags within NavCam
      * @return the ID of the Target found in the NavCam, and 0 if none found.
      */
-    private int getTagInfo(int find){
+    private int getTagInfo(){
         Log.i(TAG, "Calling getTagInfo() function");
         long start = System.currentTimeMillis();
 
@@ -282,7 +284,6 @@ public class YourService extends KiboRpcService {
         // TODO test with `Imgproc.INTER_NEAREST` for speed's sake?
         Imgproc.undistort(distorted, undistorted, camMat, distCoeff);
         Log.i(TAG, "Undistorted Image Successfully");
-        Log.i(TAG, "Looking for Target #" + find);
 
         Rect ROI = new Rect(371, 261, 454, 256);
         undistorted = new Mat(undistorted, ROI);
@@ -312,7 +313,7 @@ public class YourService extends KiboRpcService {
         else if (ListUtils.containsAny(markerIds, Constants.targetSixIDs)) {target = 6;}
 
         long delta = (System.currentTimeMillis() - start)/1000;
-        Log.i(TAG, "Found Target #" + target + "; Found Intended Target: " + (target == find));
+        Log.i(TAG, "Found Target #" + target);
         Log.i(TAG, "Read AprilTags in " + delta + " seconds");
 
         return target;
@@ -362,5 +363,17 @@ public class YourService extends KiboRpcService {
             loopCounter++;
         }
         return null;
+    }
+
+    private void targetLaser(int targetNum){
+        api.laserControl(true);
+
+        try {
+            Thread.sleep(2000);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        api.laserControl(false);
     }
 }
