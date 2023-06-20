@@ -189,8 +189,7 @@ public class YourService extends KiboRpcService {
             List<Integer> targets = api.getActiveTargets();
             Log.d(TAG, targets.toString().substring(1, targets.toString().length() - 1));
 
-            // move to a point
-            //moveTo(10.4d, -10d, 4.5d, 0f, 0f, 0f, 1f);
+            // Move to Point 2 (Testing)
             moveTo(new Point(10.515, -9.806, 4.593), new Quaternion(1f, 0f, 0f, 0f));
             moveTo(new Point(10.412, -9.071, 4.48), new Quaternion(1f, 0f, 0f, 0f));
 
