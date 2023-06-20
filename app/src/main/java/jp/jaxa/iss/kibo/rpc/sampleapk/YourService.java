@@ -367,6 +367,7 @@ public class YourService extends KiboRpcService {
 
     private void targetLaser(int targetNum){
         api.laserControl(true);
+        Log.i(TAG, "Laser on.");
 
         try {
             Thread.sleep(2000);
@@ -375,5 +376,6 @@ public class YourService extends KiboRpcService {
         }
 
         api.laserControl(false);
+        Log.i(TAG, "Laser off.");
     }
 }
