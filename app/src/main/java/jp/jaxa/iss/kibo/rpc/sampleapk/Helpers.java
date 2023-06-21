@@ -27,7 +27,7 @@ class Constants {
     );
 
     public static final Coordinate targetFour = new Coordinate(
-            new Point(9.866984, -6.673972, 5.09531), new Quaternion(-0.5f, 0.5f, -0.5f, 0.5f)
+            new Point(10.680, -7.620, 0), new Quaternion(-0.5f, 0.5f, -0.5f, 0.5f)
     );
 
     public static final Coordinate targetFive = new Coordinate(
