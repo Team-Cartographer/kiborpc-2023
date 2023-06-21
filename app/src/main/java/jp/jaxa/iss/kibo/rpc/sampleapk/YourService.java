@@ -136,7 +136,7 @@ public class YourService extends KiboRpcService {
         moveTo(new Point(10.515, -9.806, 4.593),
                 new Quaternion(1f, 0f, 0f, 0f));
         moveTo(Constants.targetSix);
-        moveTo(new Point(10.412, -9.071, 4.08), new Quaternion(1f, 0f, 0f, 0f));
+        //moveTo(new Point(10.412, -9.071, 4.08), new Quaternion(1f, 0f, 0f, 0f));
 
         int foundTarget = getTagInfo();
         if (activeTargets.contains(foundTarget)) {
@@ -213,7 +213,6 @@ public class YourService extends KiboRpcService {
         Mat distorted = api.getMatNavCam();
         api.flashlightControlFront(0.0f);
 
-        // TODO test with `Imgproc.INTER_NEAREST` for speed's sake?
         Imgproc.undistort(distorted, undistorted, camMat, distCoeff);
         Log.i(TAG, "Undistorted Image Successfully");
 
@@ -301,13 +300,13 @@ public class YourService extends KiboRpcService {
         if(!activeTargets.contains(targetNum))
             return;
 
-        api.laserControl(true);
+        api.laserControl(true); Log.i(TAG, "Laser on.");
         try {
             Thread.sleep(2000);
         } catch(InterruptedException e) {
             e.printStackTrace();
         }
-        api.laserControl(false);
+        api.laserControl(false); Log.i(TAG, "Laser off.");
     }
 
     public static boolean containsAny(List<Integer> arrayList, int[] elements) {
