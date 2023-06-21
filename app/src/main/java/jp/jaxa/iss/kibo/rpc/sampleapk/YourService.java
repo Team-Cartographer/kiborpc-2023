@@ -41,7 +41,7 @@ public class YourService extends KiboRpcService {
         final int LOOP_MAX = 10;
 
         Log.i(TAG, "[0] Calling moveTo function ");
-        Log.i(TAG, point.getX() + ", " + point.getY() + ", " + point.getZ());
+        Log.i(TAG, "Moving to: " + point.getX() + ", " + point.getY() + ", " + point.getZ());
         long start = System.currentTimeMillis();
 
         Result result = api.moveTo(point, quaternion, true);
@@ -131,7 +131,7 @@ public class YourService extends KiboRpcService {
         while (true){
             // get the list of active target id
             List<Integer> activeTargets = api.getActiveTargets();
-            Log.i(TAG, activeTargets.toString());
+            Log.i(TAG, "Active Targets: " + activeTargets.toString());
 
             // Move to Point 6 (Testing)
             // avoid KOZ
