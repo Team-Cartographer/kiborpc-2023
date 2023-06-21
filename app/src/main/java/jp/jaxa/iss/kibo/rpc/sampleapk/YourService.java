@@ -166,35 +166,35 @@ public class YourService extends KiboRpcService {
         
         // get QR code content (Temporarily Disabled)
           String mQrContent = "No QR Code Content was Found";
-        try {
-            mQrContent = getQRContentBuffer();
-
-            switch (mQrContent) {
-                case "JEM":
-                    mQrContent = "STAY_AT_JEM";
-                    break;
-                case "COLUMBUS":
-                    mQrContent = "GO_TO_COLUMBUS";
-                    break;
-                case "RACK1":
-                    mQrContent = "CHECK_RACK_1";
-                    break;
-                case "ASTROBEE":
-                    mQrContent = "I_AM_HERE";
-                    break;
-                case "INTBALL":
-                    mQrContent = "LOOKING_FORWARD_TO_SEE_YOU";
-                    break;
-                case "BLANK":
-                    mQrContent = "NO_PROBLEM";
-                    break;
-                default:
-                    /* do nothing */
-                    break;
-            }
-        } catch(Exception e) {
-            Log.i(TAG, "QR Code Content was Never Found!\nUsing an error String instead.");
-        }
+//        try {
+//            mQrContent = getQRContentBuffer();
+//
+//            switch (mQrContent) {
+//                case "JEM":
+//                    mQrContent = "STAY_AT_JEM";
+//                    break;
+//                case "COLUMBUS":
+//                    mQrContent = "GO_TO_COLUMBUS";
+//                    break;
+//                case "RACK1":
+//                    mQrContent = "CHECK_RACK_1";
+//                    break;
+//                case "ASTROBEE":
+//                    mQrContent = "I_AM_HERE";
+//                    break;
+//                case "INTBALL":
+//                    mQrContent = "LOOKING_FORWARD_TO_SEE_YOU";
+//                    break;
+//                case "BLANK":
+//                    mQrContent = "NO_PROBLEM";
+//                    break;
+//                default:
+//                    /* do nothing */
+//                    break;
+//            }
+//        } catch(Exception e) {
+//            Log.i(TAG, "QR Code Content was Never Found!\nUsing an error String instead.");
+//        }
         Log.i(TAG, "QR Content: " + mQrContent);
 
         // turn off the front flash light
