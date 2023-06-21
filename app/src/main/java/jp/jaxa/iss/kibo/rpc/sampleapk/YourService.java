@@ -300,48 +300,13 @@ public class YourService extends KiboRpcService {
         if(!activeTargets.contains(targetNum))
             return;
 
-        int loops = 0;
-        final int LOOP_MAX = 10;
-
-        Result result = api.laserControl(true);
-
-        if(result.hasSucceeded())
-            Log.i(TAG, "Laser on.");
-        else  {
-            while(!result.hasSucceeded() && loops <= LOOP_MAX){
-                result = api.laserControl(true);
-                if(result.hasSucceeded()){
-                    Log.i(TAG, "Laser on after " + loops + " tries.");
-                    break;
-                }
-                loops++;
-            }
-        }
-
+        api.laserControl(true);
         try {
             Thread.sleep(2000);
         } catch(InterruptedException e) {
             e.printStackTrace();
         }
-
-        loops = 0;
-        result = api.laserControl(false);
-
-        if(result.hasSucceeded())
-            Log.i(TAG, "Laser off.");
-        else {
-            while (!result.hasSucceeded() && loops <= LOOP_MAX) {
-                result = api.laserControl(false);
-                if (result.hasSucceeded()) {
-                    Log.i(TAG, "Laser off after " + loops + " tries.");
-                    return;
-                }
-                loops++;
-            }
-        }
-
-        Log.i(TAG, "Laser targeting failed after 20 tries.");
-
+        api.laserControl(false);
     }
 
     public static boolean containsAny(List<Integer> arrayList, int[] elements) {
