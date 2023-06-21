@@ -73,6 +73,17 @@ public class YourService extends KiboRpcService {
         }
     }
 
+    // Extra wrappers for moveTo for convenience
+    private void moveTo(Coordinate coord){
+        moveTo(coord.getPoint(), coord.getQuaternion());
+    }
+
+    private void moveTo(double pt_x, double pt_y, double pt_z, float q_x, float q_y, float q_z, float q_w){
+        moveTo(new Point(pt_x, pt_y, pt_z), new Quaternion(q_x, q_y, q_z, q_w));
+    }
+
+
+
 
     //TODO the method below is for image processing which comes with laser detection
     /**
