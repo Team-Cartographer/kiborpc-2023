@@ -121,14 +121,3 @@ class LaserTarget {
         this.dotRadius = dotRadius;
     }
 }
-
-class ListUtils {
-    public static boolean containsAny(List<Integer> arrayList, int[] elements) {
-        for (int element : elements) {
-            if (arrayList.contains(element)) {
-                return true;
-            }
-        }
-        return false;
-    }
-}

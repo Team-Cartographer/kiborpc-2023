@@ -30,7 +30,70 @@ public class YourService extends KiboRpcService {
             TAG = "CARTOGRAPHER",
             SIM = "Simulator",
             IRL = "Orbit"; // IRL -> 'In Real Life'
-    
+
+    //Abhi's list utils function moved to the correct place
+    public static boolean containsAny(List<Integer> arrayList, int[] elements) {
+        for (int element : elements) {
+            if (arrayList.contains(element)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Wrapper function for api.moveTo(point, quaternion, boolean) to make a fail-safe
+     * in case initial movement fails, and log movement details.
+     * @param pos_x x pos to move to
+     * @param pos_y y pos to move to
+     * @param pos_z z pos to move to
+     * @param qua_x quaternion x to move to
+     * @param qua_y quaternion y to move to
+     * @param qua_z quaternion z to move to
+     * @param qua_w quaternion w to move to
+     */
+    private void moveTo(double pos_x, double pos_y, double pos_z,
+                                  double qua_x, double qua_y, double qua_z,
+                                  double qua_w) {
+        final int LOOP_MAX = 10;
+        final Point point = new Point(pos_x, pos_y, pos_z);
+        final Quaternion quaternion = new Quaternion((float) qua_x, (float) qua_y,
+                (float) qua_z, (float) qua_w);
+
+
+        Log.i(TAG, "[0] Calling moveTo function ");
+        Log.i(TAG, pos_x + " " + pos_y + " " + pos_z);
+        long start = System.currentTimeMillis();
+
+        Result result = api.moveTo(point, quaternion, true);
+
+        long end = System.currentTimeMillis();
+        long elapsedTime = end - start;
+        Log.i(TAG, "[0] moveTo finished in : " + elapsedTime/1000 + " seconds");
+        Log.i(TAG, "[0] hasSucceeded : " + result.hasSucceeded());
+        Log.i(TAG, "[0] getStatus : " + result.getStatus().toString());
+        Log.i(TAG, "[0] getMessage : " + result.getMessage());
+
+        int loopCounter = 1;
+        while (!result.hasSucceeded() && loopCounter <= LOOP_MAX) {
+
+            Log.i(TAG, "[" + loopCounter + "] " + "Calling moveTo function");
+            start = System.currentTimeMillis();
+
+            result = api.moveTo(point, quaternion, true);
+
+            end = System.currentTimeMillis();
+            elapsedTime = end - start;
+            Log.i(TAG, "[" + loopCounter + "] " + "moveTo finished in : " + elapsedTime / 1000 +
+                    " seconds");
+            Log.i(TAG, "[" + loopCounter + "] " + "hasSucceeded : " + result.hasSucceeded());
+            Log.i(TAG, "[" + loopCounter + "] " + "getStatus : " + result.getStatus().toString());
+            Log.i(TAG, "[" + loopCounter + "] " + "getMessage : " + result.getMessage());
+
+            loopCounter++;
+        }
+    }
+
     /**
      * Wrapper function for api.moveTo(point, quaternion, boolean) to make a fail-safe
      * in case initial movement fails, and log movement details.
@@ -263,12 +326,12 @@ public class YourService extends KiboRpcService {
         Log.i(TAG, "Marker IDs Found: " + markerIds.toString());
 
         int target = 0;
-        if (ListUtils.containsAny(markerIds, Constants.targetOneIDs)){target = 1;}
-        else if (ListUtils.containsAny(markerIds, Constants.targetTwoIDs)){target = 2;}
-        else if (ListUtils.containsAny(markerIds, Constants.targetThreeIDs)) {target = 3;}
-        else if (ListUtils.containsAny(markerIds, Constants.targetFourIDs)) {target = 4;}
-        else if (ListUtils.containsAny(markerIds, Constants.targetFiveIDs)) {target = 5;}
-        else if (ListUtils.containsAny(markerIds, Constants.targetSixIDs)) {target = 6;}
+        if (containsAny(markerIds, Constants.targetOneIDs)){target = 1;}
+        else if (containsAny(markerIds, Constants.targetTwoIDs)){target = 2;}
+        else if (containsAny(markerIds, Constants.targetThreeIDs)) {target = 3;}
+        else if (containsAny(markerIds, Constants.targetFourIDs)) {target = 4;}
+        else if (containsAny(markerIds, Constants.targetFiveIDs)) {target = 5;}
+        else if (containsAny(markerIds, Constants.targetSixIDs)) {target = 6;}
 
         long delta = (System.currentTimeMillis() - start)/1000;
         Log.i(TAG, "Found Target #" + target);
