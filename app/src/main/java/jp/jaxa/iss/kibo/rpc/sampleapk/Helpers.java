@@ -2,7 +2,6 @@ package jp.jaxa.iss.kibo.rpc.sampleapk;
 
 import gov.nasa.arc.astrobee.types.Point;
 import gov.nasa.arc.astrobee.types.Quaternion;
-import java.util.List;
 
 class Constants {
 
@@ -12,34 +11,6 @@ class Constants {
 
     public static final Coordinate goal = new Coordinate(
             new Point(11.143, -6.7607, 4.9654), new Quaternion(0, 0, -0.707f, 0.707f)
-    );
-
-    public static final Coordinate pointOne = new Coordinate(
-            new Point(11.2746, -9.92284, 5.2988), new Quaternion(0f, 0f, -0.707f, 0.707f)
-    );
-
-    public static final Coordinate pointTwo = new Coordinate(
-            new Point(10.612, -9.0709, 4.48), new Quaternion(0.5f, 0.5f, -0.5f, -0.5f)
-    );
-
-    public static final Coordinate pointThree = new Coordinate(
-            new Point(10.71, -7.7, 4.48), new Quaternion(0, 0.707f, 0, 0.707f)
-    );
-
-    public static final Coordinate pointFour = new Coordinate(
-            new Point(10.51, -6.7185, 5.1804), new Quaternion(0, 0, -1, 0)
-    );
-
-    public static final Coordinate pointFive = new Coordinate(
-            new Point(11.114, -7.9756, 5.3393), new Quaternion(-0.5f, -0.5f, -0.5f, 0.5f)
-    );
-
-    public static final Coordinate pointSix = new Coordinate(
-            new Point(11.355, -8.9929, 4.7818), new Quaternion(0, 0, 0, 1)
-    );
-
-    public static final Coordinate pointSeven = new Coordinate(
-            new Point(11.369, -8.5518, 4.48), new Quaternion(0f, 0.707f, 0f, 0.707f)
     );
 
     // TODO figure out what the target Coordinates really mean on the map!
@@ -64,7 +35,7 @@ class Constants {
     );
 
     public static final Coordinate targetSix = new Coordinate(
-            new Point(12.023, -8.989, 4.8305), new Quaternion(0.5f, 0.5f, -0.5f, -0.5f)
+            new Point(10.412, -9.071, 4.48), new Quaternion(1f, 0f, 0f, 0f)
     );
 
     public static final Coordinate QRCode = new Coordinate(

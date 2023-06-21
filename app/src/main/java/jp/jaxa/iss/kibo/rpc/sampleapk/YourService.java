@@ -145,9 +145,6 @@ public class YourService extends KiboRpcService {
         moveTo(new Point(pt_x, pt_y, pt_z), new Quaternion(q_x, q_y, q_z, q_w));
     }
 
-
-
-
     //TODO the method below is for image processing which comes with laser detection
     /**
      * Pre-Load the Camera Matrix and Distortion Coefficients to save time.
@@ -200,16 +197,17 @@ public class YourService extends KiboRpcService {
             Log.i(TAG, activeTargets.toString());
 
             // Move to Point 6 (Testing)
+            // avoid KOZ
             moveTo(new Point(10.515, -9.806, 4.593),
                     new Quaternion(1f, 0f, 0f, 0f));
-            moveTo(new Point(10.412, -9.071, 4.48),
-                    new Quaternion(1f, 0f, 0f, 0f));
+            moveTo(Constants.targetSix);
+
             int foundTarget = getTagInfo();
             if(activeTargets.contains(foundTarget)){
                 targetLaser(foundTarget);
             }
 
-            // take active target snapshots
+            // take active target snapshots7
             int target_id = 1;
             api.takeTargetSnapshot(target_id);
 
