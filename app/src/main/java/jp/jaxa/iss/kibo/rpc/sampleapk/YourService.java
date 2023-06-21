@@ -127,43 +127,21 @@ public class YourService extends KiboRpcService {
         api.startMission();
         initCam(SIM);
 
-        int loops = 0;
-        while (true){
-            // get the list of active target id
-            List<Integer> activeTargets = api.getActiveTargets();
-            Log.i(TAG, "Active Targets: " + activeTargets.toString());
+        // get the list of active target id
+        List<Integer> activeTargets = api.getActiveTargets();
+        Log.i(TAG, "Active Targets: " + activeTargets.toString());
 
-            // Move to Point 6 (Testing)
-            // avoid KOZ
-            moveTo(new Point(10.515, -9.806, 4.593),
-                    new Quaternion(1f, 0f, 0f, 0f));
-            moveTo(Constants.targetSix);
+        // Move to Point 6 (Testing)
+        // avoid KOZ
+        moveTo(new Point(10.515, -9.806, 4.593),
+                new Quaternion(1f, 0f, 0f, 0f));
+        moveTo(Constants.targetSix);
 
-            int foundTarget = getTagInfo();
-            if(activeTargets.contains(foundTarget)){
-                targetLaser(foundTarget);
-            }
-
-            // take active target snapshots7
-            int target_id = 1;
-            api.takeTargetSnapshot(target_id);
-
-            /* ************************************************ */
-            /* write your own code and repair the ammonia leak! */
-            /* ************************************************ */
-
-
-            // check the remaining milliseconds of mission time
-            if (api.getTimeRemaining().get(1) < 60000)
-                break;
-
-            loops++;
-            if (loops == 2)
-                break;
+        int foundTarget = getTagInfo();
+        if (activeTargets.contains(foundTarget)) {
+            targetLaser(foundTarget, activeTargets);
         }
-        // turn on the front flash light
-        api.flashlightControlFront(0.05f);
-        
+
         // get QR code content (Temporarily Disabled)
           String mQrContent = "No QR Code Content was Found";
 //        try {
@@ -196,9 +174,6 @@ public class YourService extends KiboRpcService {
 //            Log.i(TAG, "QR Code Content was Never Found!\nUsing an error String instead.");
 //        }
         Log.i(TAG, "QR Content: " + mQrContent);
-
-        // turn off the front flash light
-        api.flashlightControlFront(0.00f);
 
         // notify that astrobee is heading to the goal
         api.notifyGoingToGoal();
@@ -321,9 +296,27 @@ public class YourService extends KiboRpcService {
         return null;
     }
 
-    private void targetLaser(int targetNum){
-        api.laserControl(true);
-        Log.i(TAG, "Laser on.");
+    private void targetLaser(int targetNum, List<Integer> activeTargets){
+        if(!activeTargets.contains(targetNum))
+            return;
+
+        int loops = 0;
+        final int LOOP_MAX = 10;
+
+        Result result = api.laserControl(true);
+
+        if(result.hasSucceeded())
+            Log.i(TAG, "Laser on.");
+        else  {
+            while(!result.hasSucceeded() && loops <= LOOP_MAX){
+                result = api.laserControl(true);
+                if(result.hasSucceeded()){
+                    Log.i(TAG, "Laser on after " + loops + " tries.");
+                    break;
+                }
+                loops++;
+            }
+        }
 
         try {
             Thread.sleep(2000);
@@ -331,8 +324,24 @@ public class YourService extends KiboRpcService {
             e.printStackTrace();
         }
 
-        api.laserControl(false);
-        Log.i(TAG, "Laser off.");
+        loops = 0;
+        result = api.laserControl(false);
+
+        if(result.hasSucceeded())
+            Log.i(TAG, "Laser off.");
+        else {
+            while (!result.hasSucceeded() && loops <= LOOP_MAX) {
+                result = api.laserControl(false);
+                if (result.hasSucceeded()) {
+                    Log.i(TAG, "Laser off after " + loops + " tries.");
+                    return;
+                }
+                loops++;
+            }
+        }
+
+        Log.i(TAG, "Laser targeting failed after 20 tries.");
+
     }
 
     public static boolean containsAny(List<Integer> arrayList, int[] elements) {
