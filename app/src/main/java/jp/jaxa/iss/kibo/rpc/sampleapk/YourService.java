@@ -136,7 +136,7 @@ public class YourService extends KiboRpcService {
         moveTo(new Point(10.515, -9.806, 4.593),
                 new Quaternion(1f, 0f, 0f, 0f));
         moveTo(Constants.targetSix);
-        moveTo(new Point(10.412, -9.071, 4.28), new Quaternion(1f, 0f, 0f, 0f));
+        moveTo(new Point(10.412, -9.071, 4.08), new Quaternion(1f, 0f, 0f, 0f));
 
         int foundTarget = getTagInfo();
         if (activeTargets.contains(foundTarget)) {
