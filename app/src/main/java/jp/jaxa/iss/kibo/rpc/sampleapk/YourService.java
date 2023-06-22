@@ -1,20 +1,20 @@
 package jp.jaxa.iss.kibo.rpc.sampleapk;
+
+import android.util.Log;
+
 import jp.jaxa.iss.kibo.rpc.api.KiboRpcService;
 
 import java.util.List;
-import java.util.ArrayList;
 import gov.nasa.arc.astrobee.Result;
+import gov.nasa.arc.astrobee.android.gs.MessageType;
 import gov.nasa.arc.astrobee.types.Point;
 import gov.nasa.arc.astrobee.types.Quaternion;
-import android.util.Log;
+import java.util.Map;
+import java.util.HashMap;
 
-import org.opencv.aruco.DetectorParameters;
-import org.opencv.aruco.Dictionary;
-import org.opencv.core.CvType;
-import org.opencv.aruco.Aruco;
 import org.opencv.core.Mat;
-import org.opencv.core.Rect;
-import org.opencv.imgproc.Imgproc;
+
+import org.opencv.core.MatOfPoint;
 import org.opencv.objdetect.QRCodeDetector;
 
 
@@ -23,238 +23,89 @@ import org.opencv.objdetect.QRCodeDetector;
  */
 
 public class YourService extends KiboRpcService {
+    private static final String TAG = "KiboFiendFyre";
+    private float down = 5.25f;
+    private Quaternion q;
+    private Point p;
+    private String QRmes;
+    private Point[] P = {
+            new Point(10.4f    , -10       , 4.4f),       // start(0)
+            new Point(11.2746f , -9.92284f , 5.2988f),    //v
+            new Point(10.612f  , -9.0709f  , 4.48f),      //v
+            new Point(10.71f   , -7.7f     , 4.48f),      //v
+            new Point(10.51f   , -6.7185f  , 5.1804f),    //v
+            new Point(11.114f  , -7.9756f  , 5.3393f),    //v
+            new Point(11.355f  , -8.9929f  , 4.7818f),    //v
+            new Point(11.369f  , -8.5518   , 4.7818f),    // QR code(7)
+            new Point(11.143f  , -6.7607f  , 4.48f),      // goal(8)
+            new Point(10.4f    , -10       , down),         // startz(9 = 0 + 9)
+            new Point(11.2746f , -9.92284f , down),
+            new Point(10.612f  , -9.0709f  , down),
+            new Point(10.71f   , -7.7f     , down),
+            new Point(10.51f   , -6.7185f  , down),
+            new Point(11.114f  , -7.9756f  , down),
+            new Point(11.355f  , -8.9929f  , down),
+            new Point(11.369f  , -8.5518   , down),         // QR codez(16 = 7 + 9)
+            new Point(11.143f  , -6.7607f  , down),         // goalz(17 = 8 + 9)
 
-    Mat camMat, distCoeff;
+    };
+    private Quaternion[] quaternion = {
+            new Quaternion(0, 0, 0, 0),                   // start
+            new Quaternion(0, 0, -0.707f, 0.707f),
+            new Quaternion(0.5f, 0.5f, -0.5f, 0.5f),
+            new Quaternion(0, 0.707f, 0, 0.707f),
+            new Quaternion(0, 0, -1, 0),
+            new Quaternion(-0.5f, -0.5f, -0.5f, 0.5f),
+            new Quaternion(0, 0, 0, 1),
+            new Quaternion(0.707f,0,-0.707f,0)            // QR code
+    };
 
-    final String
-            TAG = "CARTOGRAPHER",
-            SIM = "Simulator",
-            IRL = "Orbit"; // IRL -> 'In Real Life'
+    int flag_obstacle = 0;//keeping track of each obstacle crossed
 
-    /**
-     * Wrapper function for api.moveTo(point, quaternion, boolean) to make a fail-safe
-     * in case initial movement fails, and log movement details.
-     * @param point the Point to move to
-     * @param quaternion the Quaternion to orient angles to
-     */
-    private void moveTo(Point point, Quaternion quaternion) {
-        final int LOOP_MAX = 10;
+    //Keep In Zone Co - ordinates
 
-        Log.i(TAG, "[0] Calling moveTo function ");
-        Log.i(TAG, "Moving to: " + point.getX() + ", " + point.getY() + ", " + point.getZ());
-        long start = System.currentTimeMillis();
+    private double[][][] KIZ = {
+            {
+                    {10.3, 11.55}, {-10.2, -6}, {4.32, 5.57}
+            },
+            {
+                    {9.5, 10.5}, {-10.5, -9.6}, {4.02, 4.8}
+            }
+    };
 
-        Result result = api.moveTo(point, quaternion, true);
+    //Keep Out Zone Co-ordinates
+    private double[][][] KOZ = {
+            {
+                    // 000    001        010       011
+                    {10.783, 11.071}, {-9.8899, -9.6929}, {4.8385, 5.0665}
+            },
+            {
+                    // 100    101         110       111
+                    {10.8652, 10.9628}, {-9.0734, -8.7314}, {4.3861, 4.6401}
+            },
+            {
+                    {10.185, 11.665}, {-8.3826, -8.2826}, {4.1475, 4.6725}
+            },
+            {
+                    {10.7955, 11.3525}, {-8.0635, -7.7305}, {5.1055, 5.1305}
+            },
+            {
+                    {10.563, 10.709}, {-7.1449, -6.8099}, {4.6544, 4.8164}
+            }
 
-        long end = System.currentTimeMillis();
-        long elapsedTime = end - start;
-        Log.i(TAG, "[0] moveTo finished in : " + elapsedTime/1000 + " seconds");
-        Log.i(TAG, "[0] hasSucceeded : " + result.hasSucceeded());
-        Log.i(TAG, "[0] getStatus : " + result.getStatus().toString());
-        Log.i(TAG, "[0] getMessage : " + result.getMessage());
+    };
 
-        int loopCounter = 1;
-        while (!result.hasSucceeded() && loopCounter <= LOOP_MAX) {
+    private String photo_name(int x) {
+        String res = "";
 
-            Log.i(TAG, "[" + loopCounter + "] " + "Calling moveTo function");
-            start = System.currentTimeMillis();
+        res += "photo";
+        res += Integer.toString(x);
+        res += ".png";
 
-            result = api.moveTo(point, quaternion, true);
-
-            end = System.currentTimeMillis();
-            elapsedTime = end - start;
-            Log.i(TAG, "[" + loopCounter + "] " + "moveTo finished in : " + elapsedTime / 1000 +
-                    " seconds");
-            Log.i(TAG, "[" + loopCounter + "] " + "hasSucceeded : " + result.hasSucceeded());
-            Log.i(TAG, "[" + loopCounter + "] " + "getStatus : " + result.getStatus().toString());
-            Log.i(TAG, "[" + loopCounter + "] " + "getMessage : " + result.getMessage());
-
-            loopCounter++;
-        }
+        return res;
     }
 
-    // Extra wrappers for moveTo for convenience
-    private void moveTo(Coordinate coord){
-        moveTo(coord.getPoint(), coord.getQuaternion());
-    }
 
-    private void moveTo(double pt_x, double pt_y, double pt_z, float q_x, float q_y, float q_z, float q_w){
-        moveTo(new Point(pt_x, pt_y, pt_z), new Quaternion(q_x, q_y, q_z, q_w));
-    }
-
-    //TODO the method below is for image processing which comes with laser detection
-    /**
-     * Pre-Load the Camera Matrix and Distortion Coefficients to save time.
-     * @param mode 'SIM' or 'IRL' -> Simulator or Real Coefficients, Respectively
-     */
-    private void initCam(String mode){
-        camMat = new Mat(3, 3, CvType.CV_32F);
-        distCoeff = new Mat(1, 5, CvType.CV_32F);
-
-        if(mode.equals(SIM)){
-            // all numbers via programming manual
-            float[] camArr = {
-                    661.783002f, 0.000000f, 595.212041f,
-                    0.000000f, 671.508662f, 489.094196f,
-                    0.000000f, 0.000000f, 1.000000f
-            };
-            float[] distortionCoefficients = {
-                    -0.215168f, 0.044354f, 0.003615f, 0.005093f, 0.000000f
-            };
-
-            camMat.put(0, 0, camArr);
-            distCoeff.put(0,0, distortionCoefficients);
-        }
-        else if(mode.equals(IRL)){
-            float[] camArr = {
-                    753.51021f, 0.0f, 631.11512f,
-                    0.0f, 751.3611f, 508.69621f,
-                    0.0f, 0.0f, 1.0f
-            };
-            float[] distortionCoefficients = {
-                    -0.411405f, 0.177240f, -0.017145f, 0.006421f, 0.000000f
-            };
-
-            camMat.put(0, 0, camArr);
-            distCoeff.put(0,0, distortionCoefficients);
-        }
-        Log.i(TAG, "Initialized Camera Matrices in Mode: " + mode);
-    }
-
-    @Override
-    protected void runPlan1(){
-        // the mission starts
-        api.startMission();
-        initCam(SIM);
-
-        // get the list of active target id
-        List<Integer> activeTargets = api.getActiveTargets();
-        Log.i(TAG, "Active Targets: " + activeTargets.toString());
-
-        // Move to Point 6 (Testing)
-        // avoid KOZ
-        moveTo(new Point(10.515, -9.806, 4.593),
-                new Quaternion(1f, 0f, 0f, 0f));
-        moveTo(Constants.targetSix);
-        //moveTo(new Point(10.412, -9.071, 4.08), new Quaternion(1f, 0f, 0f, 0f));
-
-        int foundTarget = getTagInfo();
-        if (activeTargets.contains(foundTarget)) {
-            targetLaser(foundTarget, activeTargets);
-        }
-
-        // get QR code content (Temporarily Disabled)
-          String mQrContent = "No QR Code Content was Found";
-//        try {
-//            mQrContent = getQRContentBuffer();
-//
-//            switch (mQrContent) {
-//                case "JEM":
-//                    mQrContent = "STAY_AT_JEM";
-//                    break;
-//                case "COLUMBUS":
-//                    mQrContent = "GO_TO_COLUMBUS";
-//                    break;
-//                case "RACK1":
-//                    mQrContent = "CHECK_RACK_1";
-//                    break;
-//                case "ASTROBEE":
-//                    mQrContent = "I_AM_HERE";
-//                    break;
-//                case "INTBALL":
-//                    mQrContent = "LOOKING_FORWARD_TO_SEE_YOU";
-//                    break;
-//                case "BLANK":
-//                    mQrContent = "NO_PROBLEM";
-//                    break;
-//                default:
-//                    /* do nothing */
-//                    break;
-//            }
-//        } catch(Exception e) {
-//            Log.i(TAG, "QR Code Content was Never Found!\nUsing an error String instead.");
-//        }
-        Log.i(TAG, "QR Content: " + mQrContent);
-
-        // notify that astrobee is heading to the goal
-        api.notifyGoingToGoal();
-
-        /* ********************************************************** */
-        /* write your own code to move Astrobee to the goal positiion */
-        /* ********************************************************** */
-        // TODO hardcode movement functions
-
-        // send mission completion
-        api.reportMissionCompletion(mQrContent);
-    }
-
-    @Override
-    protected void runPlan2(){
-       // write your plan 2 here
-    }
-
-    @Override
-    protected void runPlan3(){
-        // write your plan 3 here
-    }
-
-    /**
-     * Processes NavCam Matrix and Scans for AprilTags within NavCam
-     * @return the ID of the Target found in the NavCam, and 0 if none found.
-     */
-    private int getTagInfo(){
-        Log.i(TAG, "Calling getTagInfo() function");
-        long start = System.currentTimeMillis();
-
-        Mat undistorted = new Mat(),
-                ids = new Mat();
-
-        api.flashlightControlFront(0.05f); // enable flashlight for tag read clarity
-        Mat distorted = api.getMatNavCam();
-        api.flashlightControlFront(0.0f);
-
-        Imgproc.undistort(distorted, undistorted, camMat, distCoeff);
-        Log.i(TAG, "Undistorted Image Successfully");
-
-        Rect ROI = new Rect(371, 261, 454, 256);
-        undistorted = new Mat(undistorted, ROI);
-
-        api.saveMatImage(undistorted, "TEST_IMG.png");
-
-        Dictionary dict = Aruco.getPredefinedDictionary(Aruco.DICT_5X5_250);
-        DetectorParameters detParams = DetectorParameters.create();
-        List<Mat> detectedMarkers = new ArrayList<>();
-
-        Aruco.detectMarkers(undistorted, dict, detectedMarkers, ids, detParams);
-
-        List<Integer> markerIds = new ArrayList<>();
-        for(int i = 0; i < ids.rows(); i++){
-            for(int j = 0; j < ids.cols(); j++){
-                double[] idData = ids.get(i, j);
-                int id = (int) idData[0];
-                markerIds.add(id); }}
-        Log.i(TAG, "Marker IDs Found: " + markerIds.toString());
-
-        int target = 0;
-        if (containsAny(markerIds, Constants.targetOneIDs)){target = 1;}
-        else if (containsAny(markerIds, Constants.targetTwoIDs)){target = 2;}
-        else if (containsAny(markerIds, Constants.targetThreeIDs)) {target = 3;}
-        else if (containsAny(markerIds, Constants.targetFourIDs)) {target = 4;}
-        else if (containsAny(markerIds, Constants.targetFiveIDs)) {target = 5;}
-        else if (containsAny(markerIds, Constants.targetSixIDs)) {target = 6;}
-
-        long delta = (System.currentTimeMillis() - start)/1000;
-        Log.i(TAG, "Found Target #" + target);
-        Log.i(TAG, "Read AprilTags in " + delta + " seconds");
-
-        return target;
-    }
-
-    /**
-     * Scans NavCam Mat for a QR Code
-     * @param QR the NavCam Mat with a QR Code in the image.
-     * @return QR Code Content as a String
-     */
     private String scanQRcode() {
         Map<String, String> map = new HashMap<>();
         map.put("JEM", "STAY_AT_JEM");
@@ -271,52 +122,125 @@ public class YourService extends KiboRpcService {
         return map.get(data);
     }
 
-    private int getTagContentBuffer(){
-        //TODO finish this with getTagInfo();
-        return 0;
+    private void gotoStart(){
+        p = P[9];
+        q = quaternion[0];
+        api.moveTo(p, q, true);
+        Log.i(TAG, "arrive start z");
     }
 
-    private String getQRContentBuffer(){
-        int LOOP_MAX = 10;
+    private void gotoTarget(int x){ // T1 ~ T6
+        q = quaternion[x];
+
+        if(x <= 2){
+            p = P[11];
+            api.moveTo(p, q, true);
+            Log.i(TAG, "arrivez " + Integer.toString(x));
+
+
+            p = P[x];
+            api.moveTo(p, q, true);
+            api.saveMatImage(api.getMatNavCam(), photo_name(x));
+            Log.i(TAG, "arrive " + Integer.toString(x));
+
+
+            p = P[11];
+            api.moveTo(p, q, true);
+            Log.i(TAG, "arrivez2 " + Integer.toString(x));
+        }
+        else if(x == 4){
+            p = P[13];
+            api.moveTo(p, q, true);
+            Log.i(TAG, "arrivez " + Integer.toString(x));
+
+
+            p = P[x];
+            api.moveTo(p, q, true);
+            api.saveMatImage(api.getMatNavCam(), photo_name(x));
+            Log.i(TAG, "arrive " + Integer.toString(x));
+
+
+            p = P[13];
+            api.moveTo(p, q, true);
+            Log.i(TAG, "arrivez2 " + Integer.toString(x));
+        }
+        else{
+            p = P[16];
+            api.moveTo(p, q, true);
+            Log.i(TAG, "arrivez " + Integer.toString(x));
+
+            p = P[x];
+            api.moveTo(p, q, true);
+            api.saveMatImage(api.getMatNavCam(), photo_name(x));
+            Log.i(TAG, "arrive " + Integer.toString(x));
+
+
+            p = P[16];
+            api.moveTo(p, q, true);
+            Log.i(TAG, "arrivez2 " + Integer.toString(x));
+        }
+    }
+
+    private void gotoQR(){
+        p = P[16];
+        q = quaternion[7];
+
+
+        api.moveTo(p, q, true);
+        Log.i(TAG, "arrive QR z");
+
+        p = P[7];
+        api.moveTo(p, q, true);
+        Log.i(TAG, "arrive QR");
         api.flashlightControlFront(0.05f);
-        Mat
-                distorted = api.getMatNavCam(),
-                QR = new Mat();
-        api.flashlightControlFront(0.00f);
+        api.saveMatImage(api.getMatNavCam(), photo_name(103));
+        QRmes = scanQRcode();
 
-        Imgproc.undistort(distorted, QR, camMat, distCoeff);
-        String data = scanQRCode(QR);
 
-        int loopCounter = 0;
-        while(data == null && loopCounter <= LOOP_MAX){
-            data = scanQRCode(QR);
-
-            if(data != null)
-                return data;
-
-            loopCounter++;
-        }
-        return null;
+        p = P[16];
+        api.moveTo(p, q, true);
+        Log.i(TAG, "back to QR z");
     }
 
-    private void targetLaser(int targetNum, List<Integer> activeTargets){
-        if(!activeTargets.contains(targetNum))
-            return;
+    private void gotoGoal(){
+        api.notifyGoingToGoal();
+        p = P[13];
+        api.moveTo(p, q, true);
+        Log.i(TAG, "arrive goal z ");
 
-        api.laserControl(true); Log.i(TAG, "Laser on.");
-        try {
-            Thread.sleep(1000);
-        } catch(InterruptedException e) {}
-        api.takeTargetSnapshot(targetNum);
-        api.laserControl(false); Log.i(TAG, "Laser off.");
+
+        p = P[8];
+        api.moveTo(p, q, true);
+        Log.i(TAG, "arrive goal");
+        api.reportMissionCompletion(QRmes);
+
     }
 
-    public static boolean containsAny(List<Integer> arrayList, int[] elements) {
-        for (int element : elements) {
-            if (arrayList.contains(element)) {
-                return true;
-            }
-        }
-        return false;
+
+    @Override
+    protected void runPlan1(){
+        api.startMission();
+        //Astrobee 1 ft cube  = 0.3048 meter per side, half approx = 0.16 m, diagonally half length = 0.22 m
+        //the below 7 arrays constitute the position of P1-1 to P2-3
+
+        gotoStart();
+        gotoTarget(1);
+        gotoQR();
+        gotoGoal();
+
+        Log.i(TAG, "mission complete");
     }
+
+    @Override
+    protected void runPlan2(){
+        // write here your plan 2
+    }
+
+    @Override
+    protected void runPlan3(){
+        // write here your plan 3
+    }
+
+
+
 }
