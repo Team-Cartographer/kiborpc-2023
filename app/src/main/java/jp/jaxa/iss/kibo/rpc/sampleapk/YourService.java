@@ -130,11 +130,11 @@ public class YourService extends KiboRpcService {
     }
 
     /** moveTo double/float Specifics wrapper */
+    @SuppressWarnings("unused")
     private void moveTo(double pt_x, double pt_y, double pt_z, float q_x, float q_y, float q_z, float q_w){
         moveTo(new Point(pt_x, pt_y, pt_z), new Quaternion(q_x, q_y, q_z, q_w));
     }
 
-    //TODO the method below is for image processing which comes with laser detection
     /**
      * Pre-Load the Camera Matrix and Distortion Coefficients to save time.
      * @param mode 'SIM' or 'IRL' -> Simulator or Real Coefficients, Respectively
@@ -206,6 +206,19 @@ public class YourService extends KiboRpcService {
                 double[] idData = ids.get(i, j);
                 int id = (int) idData[0];
                 markerIds.add(id); }}
+
+        int iters = 0, iter_max = 10;
+
+        while(markerIds.size() == 0 && iters < iter_max){
+            Aruco.detectMarkers(undistorted, dict, detectedMarkers, ids, detParams);
+
+            markerIds = new ArrayList<>();
+            for(int i = 0; i < ids.rows(); i++){
+                for(int j = 0; j < ids.cols(); j++){
+                    double[] idData = ids.get(i, j);
+                    int id = (int) idData[0];
+                    markerIds.add(id); }}
+        }
         Log.i(TAG, "Marker IDs Found: " + markerIds.toString());
 
         int target = 0;
@@ -297,7 +310,7 @@ public class YourService extends KiboRpcService {
         api.laserControl(false); Log.i(TAG, "Laser off.");
     }
 
-    public static boolean containsAny(List<Integer> arrayList, int[] elements) {
+    private boolean containsAny(List<Integer> arrayList, int[] elements) {
         for (int element : elements) {
             if (arrayList.contains(element)) {
                 return true; }}
