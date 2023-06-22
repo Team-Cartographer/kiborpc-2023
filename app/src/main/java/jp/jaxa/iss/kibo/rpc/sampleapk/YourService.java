@@ -153,7 +153,7 @@ public class YourService extends KiboRpcService {
         moveTo(new Point(10.612f, -9.0709f, 5.25f), new Quaternion(0, 0, 0, 0));
 
         // get QR code content
-        String mQrContent = handleQRCode();
+        String mQrContent = qrFindAndScan();
         Log.i(TAG, "QR Content: " + mQrContent);
 
         // notify that astrobee is heading to the goal
@@ -225,24 +225,18 @@ public class YourService extends KiboRpcService {
         return target;
     }
 
-    private String handleQRCode(){
+    /**
+     * Moves to QR Code and Scans NavCam Mat for a QR Code, then returns back to central position.
+     * (Returns to central position to avoid KOZ)
+     * @return QR Code Content as a String
+     */
+    private String qrFindAndScan() {
         Quaternion QRQuaternion = new Quaternion(0.707f, 0f, -0.707f, 0f);
 
         moveTo(new Point(11.369f, -8.5518f, 5.25f), QRQuaternion);
         moveTo(new Point(11.369f, -8.5518f, 4.7818f), QRQuaternion);
         Log.i(TAG, "Arrived at QR Code");
 
-        String qrData = scanQRCode();
-        moveTo(new Point(11.369f, -8.5518f, 5.25f), QRQuaternion);
-
-        return qrData;
-    }
-
-    /**
-     * Scans NavCam Mat for a QR Code
-     * @return QR Code Content as a String
-     */
-    private String scanQRCode() {
         Map<String, String> map = new HashMap<>();
         String[] keys = {"JEM", "COLUMBUS", "RACK1", "ASTROBEE", "INTBALL", "BLANK"};
 
@@ -265,10 +259,10 @@ public class YourService extends KiboRpcService {
         Mat points = new Mat();
         String data = detector.detectAndDecode(QR, points);
 
-
+        String RET_STRING = "";
         if(!points.empty()) {
             Log.i(TAG, "Scanned QR Code and got data: " + data);
-            return map.get(data);
+            RET_STRING = map.get(data);
         } else {
             Log.i(TAG, "Scanned QR Code and got data: null");
 
@@ -276,8 +270,11 @@ public class YourService extends KiboRpcService {
             String randomGenQRTag = keys[r.nextInt(keys.length)];
 
             Log.i(TAG, "QR Scan failed, reporting data: " + randomGenQRTag);
-            return map.get(randomGenQRTag);
+            RET_STRING = map.get(randomGenQRTag);
         }
+
+        moveTo(new Point(11.369f, -8.5518f, 5.25f), QRQuaternion);
+        return RET_STRING;
     }
 
     private void targetLaser(int targetNum, List<Integer> activeTargets){
