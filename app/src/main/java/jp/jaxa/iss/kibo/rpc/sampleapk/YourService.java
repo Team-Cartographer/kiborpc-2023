@@ -302,10 +302,11 @@ public class YourService extends KiboRpcService {
 
         api.laserControl(true); Log.i(TAG, "Laser on.");
         try {
-            Thread.sleep(2000);
+            Thread.sleep(1000);
         } catch(InterruptedException e) {
             e.printStackTrace();
         }
+        api.takeTargetSnapshot(targetNum);
         api.laserControl(false); Log.i(TAG, "Laser off.");
     }
 
