@@ -34,7 +34,7 @@ public class YourService extends KiboRpcService {
     final String
             TAG = "CARTOGRAPHER",
             SIM = "Simulator",
-            IRL = "Orbit"; // IRL -> 'In Real Life'
+            IRL = "Orbit";
 
     @Override
     protected void runPlan1(){
@@ -218,6 +218,8 @@ public class YourService extends KiboRpcService {
                     double[] idData = ids.get(i, j);
                     int id = (int) idData[0];
                     markerIds.add(id); }}
+
+            iters++;
         }
         Log.i(TAG, "Marker IDs Found: " + markerIds.toString());
 
@@ -294,6 +296,11 @@ public class YourService extends KiboRpcService {
         return RET_STRING;
     }
 
+    /**
+     * Method to handle Laser Targeting
+     * @param targetNum the laser to target
+     * @param activeTargets the active targets given by api
+     */
     private void targetLaser(int targetNum, List<Integer> activeTargets){
         if(!activeTargets.contains(targetNum))
             return;
@@ -310,6 +317,12 @@ public class YourService extends KiboRpcService {
         api.laserControl(false); Log.i(TAG, "Laser off.");
     }
 
+    /**
+     * Checks if a list contains any elements from an int[] array
+     * @param arrayList the list to check
+     * @param elements the elements to find
+     * @return true if any elements from elements[] are in arrayList<>
+     */
     private boolean containsAny(List<Integer> arrayList, int[] elements) {
         for (int element : elements) {
             if (arrayList.contains(element)) {
