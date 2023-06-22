@@ -11,22 +11,23 @@ import gov.nasa.arc.astrobee.Result;
 import gov.nasa.arc.astrobee.types.Point;
 import gov.nasa.arc.astrobee.types.Quaternion;
 
-import android.util.Log;
-
-import org.opencv.aruco.DetectorParameters;
-import org.opencv.aruco.Dictionary;
 import org.opencv.core.CvType;
-import org.opencv.aruco.Aruco;
 import org.opencv.core.Mat;
 import org.opencv.core.Rect;
+import org.opencv.core.MatOfPoint;
+
+import org.opencv.aruco.Aruco;
+import org.opencv.aruco.DetectorParameters;
+import org.opencv.aruco.Dictionary;
+
 import org.opencv.imgproc.Imgproc;
 import org.opencv.objdetect.QRCodeDetector;
-import org.opencv.core.MatOfPoint;
+
+import android.util.Log;
 
 /**
  * Class meant to handle commands from the Ground Data System and execute them in Astrobee
  */
-
 public class YourService extends KiboRpcService {
 
     Mat camMat, distCoeff;
@@ -136,29 +137,27 @@ public class YourService extends KiboRpcService {
         List<Integer> activeTargets = api.getActiveTargets();
         Log.i(TAG, "Active Targets: " + activeTargets.toString());
 
+        // TODO hardcode more movement functions
+
         // Move to Point 6 (Testing)
         // avoid KOZ
         moveTo(new Point(10.515, -9.806, 4.593),
                 new Quaternion(1f, 0f, 0f, 0f));
         moveTo(Constants.targetSix);
-        //moveTo(new Point(10.412, -9.071, 4.08), new Quaternion(1f, 0f, 0f, 0f));
 
         int foundTarget = getTagInfo();
         if (activeTargets.contains(foundTarget)) {
             targetLaser(foundTarget, activeTargets);
         }
 
+        moveTo(new Point(10.612f, -9.0709f, 5.25f), new Quaternion(0, 0, 0, 0));
+
         // get QR code content
-        String mQrContent = scanQRcode();
+        String mQrContent = handleQRCode();
         Log.i(TAG, "QR Content: " + mQrContent);
 
         // notify that astrobee is heading to the goal
         api.notifyGoingToGoal();
-
-        /* ********************************************************** */
-        /* write your own code to move Astrobee to the goal positiion */
-        /* ********************************************************** */
-        // TODO hardcode movement functions
 
         // send mission completion
         api.reportMissionCompletion(mQrContent);
@@ -226,11 +225,24 @@ public class YourService extends KiboRpcService {
         return target;
     }
 
+    private String handleQRCode(){
+        Quaternion QRQuaternion = new Quaternion(0.707f, 0f, -0.707f, 0f);
+
+        moveTo(new Point(11.369f, -8.5518f, 5.25f), QRQuaternion);
+        moveTo(new Point(11.369f, -8.5518f, 4.7818f), QRQuaternion);
+        Log.i(TAG, "Arrived at QR Code");
+
+        String qrData = scanQRCode();
+        moveTo(new Point(11.369f, -8.5518f, 5.25f), QRQuaternion);
+
+        return qrData;
+    }
+
     /**
      * Scans NavCam Mat for a QR Code
      * @return QR Code Content as a String
      */
-    private String scanQRcode() {
+    private String scanQRCode() {
         Map<String, String> map = new HashMap<>();
         String[] keys = {"JEM", "COLUMBUS", "RACK1", "ASTROBEE", "INTBALL", "BLANK"};
 
@@ -241,17 +253,30 @@ public class YourService extends KiboRpcService {
         map.put(keys[4], "LOOKING_FORWARD_TO_SEE_YOU");
         map.put(keys[5], "NO_PROBLEM");
 
-        MatOfPoint point = new MatOfPoint();
         QRCodeDetector detector = new QRCodeDetector();
 
-        String data = detector.detectAndDecode(api.getMatNavCam(), point);
+        api.flashlightControlFront(0.05f);
+        Mat distorted = api.getMatNavCam();
+        api.flashlightControlFront(0.0f);
+        Mat QR = new Mat();
+        Imgproc.undistort(distorted, QR, camMat, distCoeff);
 
-        try {
+        Log.i(TAG, "Attempting QR Code Scan");
+        Mat points = new Mat();
+        String data = detector.detectAndDecode(QR, points);
+
+
+        if(!points.empty()) {
+            Log.i(TAG, "Scanned QR Code and got data: " + data);
             return map.get(data);
-        } catch (Exception e) {
-            // if it fails, hope for partial credit #collegeboard
+        } else {
+            Log.i(TAG, "Scanned QR Code and got data: null");
+
             Random r = new Random();
-            return map.get(keys[r.nextInt(keys.length)]);
+            String randomGenQRTag = keys[r.nextInt(keys.length)];
+
+            Log.i(TAG, "QR Scan failed, reporting data: " + randomGenQRTag);
+            return map.get(randomGenQRTag);
         }
     }
 
@@ -274,9 +299,7 @@ public class YourService extends KiboRpcService {
     public static boolean containsAny(List<Integer> arrayList, int[] elements) {
         for (int element : elements) {
             if (arrayList.contains(element)) {
-                return true;
-            }
-        }
+                return true; }}
         return false;
     }
 }
