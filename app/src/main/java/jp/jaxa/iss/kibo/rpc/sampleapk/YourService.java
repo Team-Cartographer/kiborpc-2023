@@ -129,11 +129,13 @@ public class YourService extends KiboRpcService {
         if(coordinate.hasParent()){ moveTo(coordinate.getParent(), false, false); }
 
         moveTo(coordinate.getPoint(), coordinate.getQuaternion());
+        sleep(1000);
         if(scanTag) {
             target = getTagInfo();
             targetLaser(target, activeTargets);
         }
         if(QR) { mQrContent = scanQR(); }
+        sleep(1000);
 
         if(coordinate.hasParent()){ moveTo(coordinate.getParent(), false, false); }
         return target;
@@ -301,13 +303,7 @@ public class YourService extends KiboRpcService {
             return;
 
         api.laserControl(true); Log.i(TAG, "Laser on.");
-
-        try {
-            Thread.sleep(1000);
-        } catch(InterruptedException e) {
-            e.printStackTrace();
-        }
-
+        sleep(1000);
         api.takeTargetSnapshot(targetNum);
         api.laserControl(false); Log.i(TAG, "Laser off.");
     }
@@ -356,5 +352,17 @@ public class YourService extends KiboRpcService {
         targetList.put(7, Constants.targetQR);
         targetList.put(8, Constants.goal);
         Log.i(TAG, "Initialized Movement SparseArray");
+    }
+
+    /**
+     * Helper function for Thread.sleep to avoid long Exception Handling blocks
+     * @param millis milliseconds to sleep for
+     */
+    private void sleep(long millis){
+        try {
+            Thread.sleep(millis);
+        } catch(InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }
