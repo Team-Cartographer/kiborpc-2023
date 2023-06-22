@@ -200,24 +200,13 @@ public class YourService extends KiboRpcService {
 
         Aruco.detectMarkers(undistorted, dict, detectedMarkers, ids, detParams);
 
-        List<Integer> markerIds = new ArrayList<>();
-        for(int i = 0; i < ids.rows(); i++){
-            for(int j = 0; j < ids.cols(); j++){
-                double[] idData = ids.get(i, j);
-                int id = (int) idData[0];
-                markerIds.add(id); }}
+        List<Integer> markerIds = getIdsFromMat(ids);
 
         int iters = 0, iter_max = 10;
 
         while(markerIds.size() == 0 && iters < iter_max){
             Aruco.detectMarkers(undistorted, dict, detectedMarkers, ids, detParams);
-
-            markerIds = new ArrayList<>();
-            for(int i = 0; i < ids.rows(); i++){
-                for(int j = 0; j < ids.cols(); j++){
-                    double[] idData = ids.get(i, j);
-                    int id = (int) idData[0];
-                    markerIds.add(id); }}
+            markerIds = getIdsFromMat(ids);
 
             iters++;
         }
@@ -328,5 +317,20 @@ public class YourService extends KiboRpcService {
             if (arrayList.contains(element)) {
                 return true; }}
         return false;
+    }
+
+    /**
+     * Takes in a Mat and returns its elements as ArrayList
+     * @param ids the Mat to convert to ArrayList
+     * @return the Mat converted to ArrayList
+     */
+    private List<Integer> getIdsFromMat(Mat ids){
+        List<Integer> markerIds = new ArrayList<>();
+        for(int i = 0; i < ids.rows(); i++){
+            for(int j = 0; j < ids.cols(); j++){
+                double[] idData = ids.get(i, j);
+                int id = (int) idData[0];
+                markerIds.add(id); }}
+        return markerIds;
     }
 }
