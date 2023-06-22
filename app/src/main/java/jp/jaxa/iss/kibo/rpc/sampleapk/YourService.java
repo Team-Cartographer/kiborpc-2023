@@ -193,8 +193,6 @@ public class YourService extends KiboRpcService {
         Rect ROI = new Rect(371, 261, 454, 256);
         undistorted = new Mat(undistorted, ROI);
 
-        api.saveMatImage(undistorted, "TEST_IMG.png");
-
         Dictionary dict = Aruco.getPredefinedDictionary(Aruco.DICT_5X5_250);
         DetectorParameters detParams = DetectorParameters.create();
         List<Mat> detectedMarkers = new ArrayList<>();
@@ -221,6 +219,7 @@ public class YourService extends KiboRpcService {
         Log.i(TAG, "Found Target #" + target);
         Log.i(TAG, "Read AprilTags in " + delta + " seconds");
 
+        api.saveMatImage(undistorted, "tag" + target + "Image.png");
         return target;
     }
 
@@ -257,6 +256,8 @@ public class YourService extends KiboRpcService {
         Log.i(TAG, "Attempting QR Code Scan");
         Mat points = new Mat();
         String data = detector.detectAndDecode(QR, points);
+
+        api.saveMatImage(QR, "QRCodeImage.png");
 
         String RET_STRING = "";
         if(!points.empty()) {
