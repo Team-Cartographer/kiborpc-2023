@@ -5,6 +5,10 @@ import gov.nasa.arc.astrobee.types.Quaternion;
 
 class Constants {
 
+    public static final Coordinate centerPoint = new Coordinate(
+            new Point(10.612f, -9.0709f, 5.25f), new Quaternion(0, 0, 0, 0)
+    );
+
     public static final Coordinate start = new Coordinate(
             new Point(9.815, -9.806, 4.293), new Quaternion(1, 0, 0, 0)
     );

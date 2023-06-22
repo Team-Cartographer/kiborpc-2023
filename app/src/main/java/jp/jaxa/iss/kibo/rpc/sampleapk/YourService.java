@@ -14,7 +14,6 @@ import gov.nasa.arc.astrobee.types.Quaternion;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Rect;
-import org.opencv.core.MatOfPoint;
 
 import org.opencv.aruco.Aruco;
 import org.opencv.aruco.DetectorParameters;
@@ -150,7 +149,7 @@ public class YourService extends KiboRpcService {
             targetLaser(foundTarget, activeTargets);
         }
 
-        moveTo(new Point(10.612f, -9.0709f, 5.25f), new Quaternion(0, 0, 0, 0));
+        moveTo(Constants.centerPoint);
 
         // get QR code content
         String mQrContent = qrFindAndScan();
