@@ -255,17 +255,20 @@ public class YourService extends KiboRpcService {
      * @param QR the NavCam Mat with a QR Code in the image.
      * @return QR Code Content as a String
      */
-    private String scanQRCode(Mat QR){
-        QRCodeDetector detector = new QRCodeDetector();
-        String qrData = detector.detectAndDecode(QR);
+    private String scanQRcode() {
+        Map<String, String> map = new HashMap<>();
+        map.put("JEM", "STAY_AT_JEM");
+        map.put("COLUMBUS", "GO_TO_COLUMBUS");
+        map.put("RACK1", "CHECK_RACK_1");
+        map.put("ASTROBEE", "I_AM_HERE");
+        map.put("INTBALL", "LOOKING_FORWARD_TO_SEE_YOU");
+        map.put("BLANK", "NO_PROBLEM");
 
-        if(!qrData.isEmpty()){
-            Log.i(TAG, "QR Code Data: " + qrData);
-            return qrData;
-        }
-        else
-            Log.i(TAG, "QR Code Detection Failed.");
-        return null;
+        MatOfPoint point = new MatOfPoint();
+        QRCodeDetector detector = new QRCodeDetector();
+
+        String data = detector.detectAndDecode(api.getMatNavCam(), point);
+        return map.get(data);
     }
 
     private int getTagContentBuffer(){
