@@ -46,20 +46,17 @@ public class YourService extends KiboRpcService {
         List<Integer> activeTargets = api.getActiveTargets();
         Log.i(TAG, "Active Targets: " + activeTargets.toString());
 
-        // TODO hardcode more movement functions
-
-        // Move to Point 6 (Testing)
-        // avoid KOZ
-        moveTo(new Point(10.515, -9.806, 4.593),
-                new Quaternion(1f, 0f, 0f, 0f));
+        moveTo(Constants.start);
+        moveTo(Constants.parentOneTwo);
+        moveTo(Constants.targetOne);
+        moveTo(Constants.parentOneTwo);
+        moveTo(Constants.parentThreeFiveSixQR);
+        moveTo(Constants.targetThree);
+        moveTo(Constants.parentThreeFiveSixQR);
+        moveTo(Constants.targetFive);
+        moveTo(Constants.parentThreeFiveSixQR);
         moveTo(Constants.targetSix);
-
-        int foundTarget = getTagInfo();
-        if (activeTargets.contains(foundTarget)) {
-            targetLaser(foundTarget, activeTargets);
-        }
-
-        moveTo(Constants.centerPoint);
+        int targetSix = getTagInfo();
 
         // get QR code content
         String mQrContent = qrFindAndScan();
@@ -234,10 +231,8 @@ public class YourService extends KiboRpcService {
      * @return QR Code Content as a String
      */
     private String qrFindAndScan() {
-        Quaternion QRQuaternion = new Quaternion(0.707f, 0f, -0.707f, 0f);
-
-        moveTo(new Point(11.369f, -8.5518f, 5.25f), QRQuaternion);
-        moveTo(new Point(11.369f, -8.5518f, 4.7818f), QRQuaternion);
+        moveTo(Constants.parentThreeFiveSixQR);
+        moveTo(Constants.targetQR);
         Log.i(TAG, "Arrived at QR Code");
 
         Map<String, String> map = new HashMap<>();
@@ -281,7 +276,7 @@ public class YourService extends KiboRpcService {
             RET_STRING = map.get(randomGenQRTag);
         }
 
-        moveTo(new Point(11.369f, -8.5518f, 5.25f), QRQuaternion);
+        moveTo(Constants.parentThreeFiveSixQR);
         return RET_STRING;
     }
 
