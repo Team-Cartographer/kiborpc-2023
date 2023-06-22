@@ -36,96 +36,6 @@ public class YourService extends KiboRpcService {
             SIM = "Simulator",
             IRL = "Orbit"; // IRL -> 'In Real Life'
 
-    /**
-     * Wrapper function for api.moveTo(point, quaternion, boolean) to make a fail-safe
-     * in case initial movement fails, and log movement details.
-     * @param point the Point to move to
-     * @param quaternion the Quaternion to orient angles to
-     */
-    private void moveTo(Point point, Quaternion quaternion) {
-        final int LOOP_MAX = 10;
-
-        Log.i(TAG, "[0] Calling moveTo function ");
-        Log.i(TAG, "Moving to: " + point.getX() + ", " + point.getY() + ", " + point.getZ());
-        long start = System.currentTimeMillis();
-
-        Result result = api.moveTo(point, quaternion, true);
-
-        long end = System.currentTimeMillis();
-        long elapsedTime = end - start;
-        Log.i(TAG, "[0] moveTo finished in : " + elapsedTime/1000 + " seconds");
-        Log.i(TAG, "[0] hasSucceeded : " + result.hasSucceeded());
-        Log.i(TAG, "[0] getStatus : " + result.getStatus().toString());
-        Log.i(TAG, "[0] getMessage : " + result.getMessage());
-
-        int loopCounter = 1;
-        while (!result.hasSucceeded() && loopCounter <= LOOP_MAX) {
-
-            Log.i(TAG, "[" + loopCounter + "] " + "Calling moveTo function");
-            start = System.currentTimeMillis();
-
-            result = api.moveTo(point, quaternion, true);
-
-            end = System.currentTimeMillis();
-            elapsedTime = end - start;
-            Log.i(TAG, "[" + loopCounter + "] " + "moveTo finished in : " + elapsedTime / 1000 +
-                    " seconds");
-            Log.i(TAG, "[" + loopCounter + "] " + "hasSucceeded : " + result.hasSucceeded());
-            Log.i(TAG, "[" + loopCounter + "] " + "getStatus : " + result.getStatus().toString());
-            Log.i(TAG, "[" + loopCounter + "] " + "getMessage : " + result.getMessage());
-
-            loopCounter++;
-        }
-    }
-
-    // Extra wrappers for moveTo for convenience
-    private void moveTo(Coordinate coord){
-        moveTo(coord.getPoint(), coord.getQuaternion());
-    }
-
-    private void moveTo(double pt_x, double pt_y, double pt_z, float q_x, float q_y, float q_z, float q_w){
-        moveTo(new Point(pt_x, pt_y, pt_z), new Quaternion(q_x, q_y, q_z, q_w));
-    }
-
-    //TODO the method below is for image processing which comes with laser detection
-    /**
-     * Pre-Load the Camera Matrix and Distortion Coefficients to save time.
-     * @param mode 'SIM' or 'IRL' -> Simulator or Real Coefficients, Respectively
-     */
-    private void initCam(String mode){
-        camMat = new Mat(3, 3, CvType.CV_32F);
-        distCoeff = new Mat(1, 5, CvType.CV_32F);
-
-        if(mode.equals(SIM)){
-            // all numbers via programming manual
-            float[] camArr = {
-                    661.783002f, 0.000000f, 595.212041f,
-                    0.000000f, 671.508662f, 489.094196f,
-                    0.000000f, 0.000000f, 1.000000f
-            };
-            float[] distortionCoefficients = {
-                    -0.215168f, 0.044354f, 0.003615f, 0.005093f, 0.000000f
-            };
-
-            camMat.put(0, 0, camArr);
-            distCoeff.put(0,0, distortionCoefficients);
-        }
-        else if(mode.equals(IRL)){
-            float[] camArr = {
-                    753.51021f, 0.0f, 631.11512f,
-                    0.0f, 751.3611f, 508.69621f,
-                    0.0f, 0.0f, 1.0f
-            };
-            float[] distortionCoefficients = {
-                    -0.411405f, 0.177240f, -0.017145f, 0.006421f, 0.000000f
-            };
-
-            camMat.put(0, 0, camArr);
-            distCoeff.put(0,0, distortionCoefficients);
-        }
-        Log.i(TAG, "Initialized Camera Matrices in Mode: " + mode);
-    }
-
     @Override
     protected void runPlan1(){
         // the mission starts
@@ -170,6 +80,97 @@ public class YourService extends KiboRpcService {
     @Override
     protected void runPlan3(){
         // write your plan 3 here
+    }
+
+    /**
+     * Wrapper function for api.moveTo(point, quaternion, boolean) to make a fail-safe
+     * in case initial movement fails, and log movement details.
+     * @param point the Point to move to
+     * @param quaternion the Quaternion to orient angles to
+     */
+    private void moveTo(Point point, Quaternion quaternion) {
+        final int LOOP_MAX = 10;
+
+        Log.i(TAG, "[0] Calling moveTo function ");
+        Log.i(TAG, "Moving to: " + point.getX() + ", " + point.getY() + ", " + point.getZ());
+        long start = System.currentTimeMillis();
+
+        Result result = api.moveTo(point, quaternion, true);
+
+        long end = System.currentTimeMillis();
+        long elapsedTime = end - start;
+        Log.i(TAG, "[0] moveTo finished in : " + elapsedTime/1000 + " seconds");
+        Log.i(TAG, "[0] hasSucceeded : " + result.hasSucceeded());
+        Log.i(TAG, "[0] getStatus : " + result.getStatus().toString());
+        Log.i(TAG, "[0] getMessage : " + result.getMessage());
+
+        int loopCounter = 1;
+        while (!result.hasSucceeded() && loopCounter <= LOOP_MAX) {
+
+            Log.i(TAG, "[" + loopCounter + "] " + "Calling moveTo function");
+            start = System.currentTimeMillis();
+
+            result = api.moveTo(point, quaternion, true);
+
+            end = System.currentTimeMillis();
+            elapsedTime = end - start;
+            Log.i(TAG, "[" + loopCounter + "] " + "moveTo finished in : " + elapsedTime / 1000 +
+                    " seconds");
+            Log.i(TAG, "[" + loopCounter + "] " + "hasSucceeded : " + result.hasSucceeded());
+            Log.i(TAG, "[" + loopCounter + "] " + "getStatus : " + result.getStatus().toString());
+            Log.i(TAG, "[" + loopCounter + "] " + "getMessage : " + result.getMessage());
+
+            loopCounter++;
+        }
+    }
+
+    /** moveTo Coordinate wrapper */
+    private void moveTo(Coordinate coord){
+        moveTo(coord.getPoint(), coord.getQuaternion());
+    }
+
+    /** moveTo double/float Specifics wrapper */
+    private void moveTo(double pt_x, double pt_y, double pt_z, float q_x, float q_y, float q_z, float q_w){
+        moveTo(new Point(pt_x, pt_y, pt_z), new Quaternion(q_x, q_y, q_z, q_w));
+    }
+
+    //TODO the method below is for image processing which comes with laser detection
+    /**
+     * Pre-Load the Camera Matrix and Distortion Coefficients to save time.
+     * @param mode 'SIM' or 'IRL' -> Simulator or Real Coefficients, Respectively
+     */
+    private void initCam(String mode){
+        camMat = new Mat(3, 3, CvType.CV_32F);
+        distCoeff = new Mat(1, 5, CvType.CV_32F);
+
+        if(mode.equals(SIM)){
+            // all numbers via programming manual
+            float[] camArr = {
+                    661.783002f, 0.000000f, 595.212041f,
+                    0.000000f, 671.508662f, 489.094196f,
+                    0.000000f, 0.000000f, 1.000000f
+            };
+            float[] distortionCoefficients = {
+                    -0.215168f, 0.044354f, 0.003615f, 0.005093f, 0.000000f
+            };
+
+            camMat.put(0, 0, camArr);
+            distCoeff.put(0,0, distortionCoefficients);
+        }
+        else if(mode.equals(IRL)){
+            float[] camArr = {
+                    753.51021f, 0.0f, 631.11512f,
+                    0.0f, 751.3611f, 508.69621f,
+                    0.0f, 0.0f, 1.0f
+            };
+            float[] distortionCoefficients = {
+                    -0.411405f, 0.177240f, -0.017145f, 0.006421f, 0.000000f
+            };
+
+            camMat.put(0, 0, camArr);
+            distCoeff.put(0,0, distortionCoefficients);
+        }
+        Log.i(TAG, "Initialized Camera Matrices in Mode: " + mode);
     }
 
     /**
@@ -253,13 +254,16 @@ public class YourService extends KiboRpcService {
         Mat QR = new Mat();
         Imgproc.undistort(distorted, QR, camMat, distCoeff);
 
+        Rect ROI = new Rect(508, 372, 332, 268);
+        QR = new Mat(QR, ROI);
+
         Log.i(TAG, "Attempting QR Code Scan");
         Mat points = new Mat();
         String data = detector.detectAndDecode(QR, points);
 
         api.saveMatImage(QR, "QRCodeImage.png");
 
-        String RET_STRING = "";
+        String RET_STRING;
         if(!points.empty()) {
             Log.i(TAG, "Scanned QR Code and got data: " + data);
             RET_STRING = map.get(data);
