@@ -4,63 +4,75 @@ import gov.nasa.arc.astrobee.types.Point;
 import gov.nasa.arc.astrobee.types.Quaternion;
 
 class Constants {
-
-    public static final Coordinate start = new Coordinate(
-            new Point(10.4, -10, 4.4), new Quaternion(0, 0, 0, 0)
-    );
-
-    public static final Coordinate parentOneTwo = new Coordinate(
+    
+    /*PARENT MOVEMENTS***/
+     private static final Coordinate parentOneTwo = new Coordinate(
             new Point(10.612, -9.079, 5.25), new Quaternion(0, 0, 0, 0)
-    );
-
-    public static final Coordinate targetOne = new Coordinate(
-            new Point(11.2746, -9.92284, 5.2988), new Quaternion(0, 0, -0.707f, 0.707f)
-    );
-
-    public static final Coordinate targetTwo = new Coordinate(
-            new Point(10.612, -9.0709, 4.48), new Quaternion(0.5f, 0.5f, -0.5f, 0.5f)
-    );
-
-    public static final Coordinate parentFourGoal = new Coordinate(
+     );
+    
+     private static final Coordinate parentFourGoal = new Coordinate(
             new Point(10.51, -6.7185, 5.25), new Quaternion(0, 0, 0, 0)
-    );
+     );
 
-    public static final Coordinate targetFour = new Coordinate(
-            new Point(10.51, -6.7185, 5.1804), new Quaternion(0, 0.707f, 0, 0.707f)
-    );
-
-    public static final Coordinate parentThreeFiveSixQR = new Coordinate(
+     private static final Coordinate parentThreeFiveSixQR = new Coordinate(
             new Point(11.369, -8.5518, 5.25), new Quaternion(0, 0, 0, 0)
-    );
+     );
+    
+     /*TARGET MOVEMENTS***/
+     static final Coordinate start = new Coordinate(
+            new Point(10.4, -10, 4.4), new Quaternion(0, 0, 0, 0)
+     );
 
-    public static final Coordinate targetThree = new Coordinate(
-            new Point(10.71, -7.7, 4.48), new Quaternion(0, 0.707f, 0, 0.707f)
-    );
+     static final Coordinate targetOne = new Coordinate(
+            new Point(11.2746, -9.92284, 5.2988), new Quaternion(0, 0, -0.707f, 0.707f),
+             parentOneTwo
+     );
 
-    public static final Coordinate targetFive = new Coordinate(
-            new Point(11.114, -7.9756, 5.3393), new Quaternion(-0.5f, -0.5f, -0.5f, 0.5f)
-    );
+     static final Coordinate targetTwo = new Coordinate(
+            new Point(10.612, -9.0709, 4.48), new Quaternion(0.5f, 0.5f, -0.5f, 0.5f),
+             parentOneTwo
+     );
 
-    public static final Coordinate targetSix = new Coordinate(
-            new Point(11.355, -8.9929, 4.7818), new Quaternion(0, 0, 0, 1)
-    );
+     static final Coordinate targetThree = new Coordinate(
+            new Point(10.71, -7.7, 4.48), new Quaternion(0, 0.707f, 0, 0.707f),
+             parentThreeFiveSixQR
+     );
 
+     static final Coordinate targetFour = new Coordinate(
+            new Point(10.51, -6.7185, 5.1804), new Quaternion(0, 0.707f, 0, 0.707f),
+             parentFourGoal
+     );
 
-    public static final Coordinate targetQR = new Coordinate(
-            new Point(11.369f, -8.5518f, 4.7818f), new Quaternion(0.707f, 0f, -0.707f, 0f)
-    );
+     static final Coordinate targetFive = new Coordinate(
+            new Point(11.114, -7.9756, 5.3393), new Quaternion(-0.5f, -0.5f, -0.5f, 0.5f),
+             parentThreeFiveSixQR
+     );
 
-    public static final Coordinate goal = new Coordinate(
-            new Point(11.143, -6.7607, 4.48), new Quaternion(0, 0, -0.707f, 0.707f)
-    );
+     static final Coordinate targetSix = new Coordinate(
+            new Point(11.355, -8.9929, 4.7818), new Quaternion(0, 0, 0, 1),
+             parentThreeFiveSixQR
+     );
 
-    public static final LaserTarget TARGET_ONE = new LaserTarget(5);
-    public static final LaserTarget TARGET_TWO = new LaserTarget(6);
-    public static final LaserTarget TARGET_THREE = new LaserTarget(4);
-    public static final LaserTarget TARGET_FOUR  = new LaserTarget(6);
-    public static final LaserTarget TARGET_FIVE = new LaserTarget(5);
-    public static final LaserTarget TARGET_SIX = new LaserTarget(5);
+     static final Coordinate targetQR = new Coordinate(
+             new Point(11.369f, -8.5518f, 4.7818f), new Quaternion(0.707f, 0f, -0.707f, 0f),
+             parentThreeFiveSixQR
+     );
+     static final Coordinate goal = new Coordinate(
+             new Point(11.143, -6.7607, 4.48), new Quaternion(0, 0, -0.707f, 0.707f),
+             parentFourGoal
 
+     );
+    
+    /*OTHER CONSTANTS**/
+//    **Currently Unused, but needed for Laser Targeting**
+//    static final LaserTarget TARGET_ONE = new LaserTarget(5);
+//    static final LaserTarget TARGET_TWO = new LaserTarget(6);
+//    static final LaserTarget TARGET_THREE = new LaserTarget(4);
+//    static final LaserTarget TARGET_FOUR  = new LaserTarget(6);
+//    static final LaserTarget TARGET_FIVE = new LaserTarget(5);
+//    static final LaserTarget TARGET_SIX = new LaserTarget(5);
+    
+    /*TARGET IDS**/
     static final int[] targetOneIDs = {1, 2, 3, 4};
     static final int[] targetTwoIDs = {5, 6, 7, 8};
     static final int[] targetThreeIDs = {9, 10, 11, 12};
@@ -72,21 +84,36 @@ class Constants {
 class Coordinate {
     private Point point;
     private Quaternion quaternion;
+    private Coordinate parent;
+    private boolean has_parent;
 
     Coordinate(Point pt, Quaternion qt) {
         point = pt;
         quaternion = qt;
+        has_parent = false;
+
+    }
+    
+    Coordinate(Point pt, Quaternion qt, Coordinate prt){
+        point = pt;
+        quaternion = qt; 
+        parent = prt;
+        has_parent = true;
     }
 
     Point getPoint() {return point;}
     Quaternion getQuaternion() {return quaternion;}
+    Coordinate getParent() {return parent;}
+    
+    boolean hasParent() {return has_parent;}
 
-    public void setPoint(Point pt) {point = pt;}
-    public void setQuaternion(Quaternion qt) {quaternion = qt;}
+    void setPoint(Point pt) {point = pt;}
+    void setQuaternion(Quaternion qt) {quaternion = qt;}
+    void setParent(Coordinate prt) {parent = prt; has_parent = true;}
 }
 
 class LaserTarget {
-    public float
+     float
             height,
             width,
             dotRadius,

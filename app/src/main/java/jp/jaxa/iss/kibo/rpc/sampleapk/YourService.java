@@ -23,6 +23,7 @@ import org.opencv.imgproc.Imgproc;
 import org.opencv.objdetect.QRCodeDetector;
 
 import android.util.Log;
+import android.util.SparseArray;
 
 /**
  * Class meant to handle commands from the Ground Data System and execute them in Astrobee
@@ -30,6 +31,9 @@ import android.util.Log;
 public class YourService extends KiboRpcService {
 
     Mat camMat, distCoeff;
+    SparseArray<Coordinate> targetList;
+    String mQrContent;
+    List<Integer> activeTargets;
 
     final String
             TAG = "CARTOGRAPHER",
@@ -41,29 +45,26 @@ public class YourService extends KiboRpcService {
         // the mission starts
         api.startMission();
         initCam(SIM);
+        initMovementMap();
 
         // get the list of active target id
-        List<Integer> activeTargets = api.getActiveTargets();
+        activeTargets = api.getActiveTargets();
         Log.i(TAG, "Active Targets: " + activeTargets.toString());
 
-        moveTo(Constants.start);
-        moveTo(Constants.parentOneTwo);
-        moveTo(Constants.targetOne);
-        moveTo(Constants.parentOneTwo);
-        moveTo(Constants.parentThreeFiveSixQR);
-        moveTo(Constants.targetThree);
-        moveTo(Constants.parentThreeFiveSixQR);
-        moveTo(Constants.targetFive);
-        moveTo(Constants.parentThreeFiveSixQR);
-        moveTo(Constants.targetSix);
-        int targetSix = getTagInfo();
+        moveTo(Constants.start, false, false);
+        for(int i : activeTargets){
+            moveTo(targetList.get(i), true, false);
+            //targetLaser(i, activeTargets); // TODO Target Laser
+        }
 
         // get QR code content
-        String mQrContent = qrFindAndScan();
+        // TODO add a time check, so that if there isnt time, we dont go for QR code
+        moveTo(targetList.get(7), false, true);
         Log.i(TAG, "QR Content: " + mQrContent);
 
         // notify that astrobee is heading to the goal
         api.notifyGoingToGoal();
+        moveTo(targetList.get(8), false, false);
 
         // send mission completion
         api.reportMissionCompletion(mQrContent);
@@ -122,8 +123,20 @@ public class YourService extends KiboRpcService {
     }
 
     /** moveTo Coordinate wrapper */
-    private void moveTo(Coordinate coord){
-        moveTo(coord.getPoint(), coord.getQuaternion());
+    @SuppressWarnings("UnusedReturnValue")
+    private int moveTo(Coordinate coordinate, boolean scanTag, boolean QR){
+        int target = 0;
+        if(coordinate.hasParent()){ moveTo(coordinate.getParent(), false, false); }
+
+        moveTo(coordinate.getPoint(), coordinate.getQuaternion());
+        if(scanTag) {
+            target = getTagInfo();
+            targetLaser(target, activeTargets);
+        }
+        if(QR) { mQrContent = scanQR(); }
+
+        if(coordinate.hasParent()){ moveTo(coordinate.getParent(), false, false); }
+        return target;
     }
 
     /** moveTo double/float Specifics wrapper */
@@ -136,6 +149,7 @@ public class YourService extends KiboRpcService {
      * Pre-Load the Camera Matrix and Distortion Coefficients to save time.
      * @param mode 'SIM' or 'IRL' -> Simulator or Real Coefficients, Respectively
      */
+    @SuppressWarnings("SameParameterValue")
     private void initCam(String mode){
         camMat = new Mat(3, 3, CvType.CV_32F);
         distCoeff = new Mat(1, 5, CvType.CV_32F);
@@ -230,9 +244,7 @@ public class YourService extends KiboRpcService {
      * (Returns to central position to avoid KOZ)
      * @return QR Code Content as a String
      */
-    private String qrFindAndScan() {
-        moveTo(Constants.parentThreeFiveSixQR);
-        moveTo(Constants.targetQR);
+    private String scanQR() {
         Log.i(TAG, "Arrived at QR Code");
 
         Map<String, String> map = new HashMap<>();
@@ -276,7 +288,6 @@ public class YourService extends KiboRpcService {
             RET_STRING = map.get(randomGenQRTag);
         }
 
-        moveTo(Constants.parentThreeFiveSixQR);
         return RET_STRING;
     }
 
@@ -327,5 +338,23 @@ public class YourService extends KiboRpcService {
                 int id = (int) idData[0];
                 markerIds.add(id); }}
         return markerIds;
+    }
+
+    /**
+     * Initializes the SparseArray with the coordinate constants for simplified movement
+     * based on Integers rather than <code>Constants.target</code>
+     */
+    private void initMovementMap(){
+        targetList = new SparseArray<>();
+        targetList.put(0, Constants.start);
+        targetList.put(1, Constants.targetOne);
+        targetList.put(2, Constants.targetTwo);
+        targetList.put(3, Constants.targetThree);
+        targetList.put(4, Constants.targetFour);
+        targetList.put(5, Constants.targetFive);
+        targetList.put(6, Constants.targetSix);
+        targetList.put(7, Constants.targetQR);
+        targetList.put(8, Constants.goal);
+        Log.i(TAG, "Initialized Movement SparseArray");
     }
 }
