@@ -13,7 +13,6 @@ import gov.nasa.arc.astrobee.types.Quaternion;
 
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.core.Rect;
 
 import org.opencv.aruco.Aruco;
 import org.opencv.aruco.DetectorParameters;
@@ -42,7 +41,7 @@ public class YourService extends KiboRpcService {
 
     @Override
     protected void runPlan1(){
-        // the mission starts
+        // start mission and initialize data
         api.startMission();
         initCam(SIM);
         initMovementMap();
@@ -51,16 +50,25 @@ public class YourService extends KiboRpcService {
         activeTargets = api.getActiveTargets();
         Log.i(TAG, "Active Targets: " + activeTargets.toString());
 
+        // move to start position
         moveTo(Constants.start, false, false);
-        for(int i : activeTargets){
-            moveTo(targetList.get(i), true, false);
-            //targetLaser(i, activeTargets); // TODO Target Laser
+
+        // go through all game phases
+        // TODO fix this janky piece of code
+        for(int phases = 1; phases <= 4; phases++) {
+            Log.i(TAG, "Entering Phase #" + phases);
+            for (int i : activeTargets) {
+                moveTo(targetList.get(i), true, false);
+                targetLaser(i);
+            }
+            activeTargets = api.getActiveTargets();
         }
 
-        // get QR code content
-        // TODO add a time check, so that if there isnt time, we dont go for QR code
-        moveTo(targetList.get(7), false, true);
-        Log.i(TAG, "QR Content: " + mQrContent);
+        // get QR code content if there's an available minute
+        if(api.getTimeRemaining().get(1) < 60000) {
+            moveTo(targetList.get(7), false, true);
+            Log.i(TAG, "QR Content: " + mQrContent);
+        }
 
         // notify that astrobee is heading to the goal
         api.notifyGoingToGoal();
@@ -81,15 +89,39 @@ public class YourService extends KiboRpcService {
     }
 
     /**
+     * moveTo Coordinate wrapper method
+     * @param coordinate the coordinate to move to
+     * @param scanTag true if moving to a tag to scan, false otherwise
+     * @param QR true if moving to QR code, false otherwise
+     * @return the scanned tag, if scanTag is true, else 0 (Unused)
+     */
+    @SuppressWarnings("UnusedReturnValue")
+    private int moveTo(Coordinate coordinate, boolean scanTag, boolean QR){
+        int target = 0;
+        if(coordinate.hasParent()){ moveTo(coordinate.getParent(), false, false); }
+
+        moveTo(coordinate.getPoint(), coordinate.getQuaternion());
+        sleep(1500);
+        if(scanTag) {
+            target = getTagInfo(targetList.indexOfValue(coordinate));
+            targetLaser(target);
+        }
+        if(QR) { mQrContent = scanQR(); }
+        sleep(1500);
+
+        if(coordinate.hasParent()){ moveTo(coordinate.getParent(), false, false); }
+        return target;
+    }
+
+    /**
      * Wrapper function for api.moveTo(point, quaternion, boolean) to make a fail-safe
      * in case initial movement fails, and log movement details.
      * @param point the Point to move to
-     * @param quaternion the Quaternion to orient angles to
+     * @param quaternion the Quaternion to angle Astrobee to
      */
     private void moveTo(Point point, Quaternion quaternion) {
         final int LOOP_MAX = 10;
 
-        Log.i(TAG, "[0] Calling moveTo function ");
         Log.i(TAG, "Moving to: " + point.getX() + ", " + point.getY() + ", " + point.getZ());
         long start = System.currentTimeMillis();
 
@@ -99,8 +131,6 @@ public class YourService extends KiboRpcService {
         long elapsedTime = end - start;
         Log.i(TAG, "[0] moveTo finished in : " + elapsedTime/1000 + " seconds");
         Log.i(TAG, "[0] hasSucceeded : " + result.hasSucceeded());
-        Log.i(TAG, "[0] getStatus : " + result.getStatus().toString());
-        Log.i(TAG, "[0] getMessage : " + result.getMessage());
 
         int loopCounter = 1;
         while (!result.hasSucceeded() && loopCounter <= LOOP_MAX) {
@@ -115,30 +145,9 @@ public class YourService extends KiboRpcService {
             Log.i(TAG, "[" + loopCounter + "] " + "moveTo finished in : " + elapsedTime / 1000 +
                     " seconds");
             Log.i(TAG, "[" + loopCounter + "] " + "hasSucceeded : " + result.hasSucceeded());
-            Log.i(TAG, "[" + loopCounter + "] " + "getStatus : " + result.getStatus().toString());
-            Log.i(TAG, "[" + loopCounter + "] " + "getMessage : " + result.getMessage());
 
             loopCounter++;
         }
-    }
-
-    /** moveTo Coordinate wrapper */
-    @SuppressWarnings("UnusedReturnValue")
-    private int moveTo(Coordinate coordinate, boolean scanTag, boolean QR){
-        int target = 0;
-        if(coordinate.hasParent()){ moveTo(coordinate.getParent(), false, false); }
-
-        moveTo(coordinate.getPoint(), coordinate.getQuaternion());
-        sleep(1000);
-        if(scanTag) {
-            target = getTagInfo();
-            targetLaser(target, activeTargets);
-        }
-        if(QR) { mQrContent = scanQR(); }
-        sleep(1000);
-
-        if(coordinate.hasParent()){ moveTo(coordinate.getParent(), false, false); }
-        return target;
     }
 
     /** moveTo double/float Specifics wrapper */
@@ -190,7 +199,7 @@ public class YourService extends KiboRpcService {
      * Processes NavCam Matrix and Scans for AprilTags within NavCam
      * @return the ID of the Target found in the NavCam, and 0 if none found.
      */
-    private int getTagInfo(){
+    private int getTagInfo(@SuppressWarnings("unused") int tagNum){
         Log.i(TAG, "Calling getTagInfo() function");
         long start = System.currentTimeMillis();
 
@@ -204,22 +213,20 @@ public class YourService extends KiboRpcService {
         Imgproc.undistort(distorted, undistorted, camMat, distCoeff);
         Log.i(TAG, "Undistorted Image Successfully");
 
-        Rect ROI = new Rect(371, 261, 454, 256);
-        undistorted = new Mat(undistorted, ROI);
-
         Dictionary dict = Aruco.getPredefinedDictionary(Aruco.DICT_5X5_250);
         DetectorParameters detParams = DetectorParameters.create();
         List<Mat> detectedMarkers = new ArrayList<>();
 
         Aruco.detectMarkers(undistorted, dict, detectedMarkers, ids, detParams);
-
         List<Integer> markerIds = getIdsFromMat(ids);
 
         int iters = 0, iter_max = 10;
-
         while(markerIds.size() == 0 && iters < iter_max){
+            Log.i(TAG, "No Markers found. Trying again [" + iters + "]");
             Aruco.detectMarkers(undistorted, dict, detectedMarkers, ids, detParams);
             markerIds = getIdsFromMat(ids);
+            if(markerIds.size() != 0)
+                break;
 
             iters++;
         }
@@ -267,14 +274,22 @@ public class YourService extends KiboRpcService {
         Mat QR = new Mat();
         Imgproc.undistort(distorted, QR, camMat, distCoeff);
 
-        Rect ROI = new Rect(508, 372, 332, 268);
-        QR = new Mat(QR, ROI);
+        api.saveMatImage(QR, "QRCodeImage.png");
 
         Log.i(TAG, "Attempting QR Code Scan");
         Mat points = new Mat();
         String data = detector.detectAndDecode(QR, points);
 
-        api.saveMatImage(QR, "QRCodeImage.png");
+        int iters = 0, iter_max = 10;
+        while(points.empty() && iters < iter_max){
+            Log.i(TAG, "No QR found. Trying again [" + iters + "]");
+            points = new Mat();
+            data = detector.detectAndDecode(QR, points);
+            if(!points.empty())
+                break;
+
+            iters++;
+        }
 
         String RET_STRING;
         if(!points.empty()) {
@@ -296,16 +311,15 @@ public class YourService extends KiboRpcService {
     /**
      * Method to handle Laser Targeting
      * @param targetNum the laser to target
-     * @param activeTargets the active targets given by api
      */
-    private void targetLaser(int targetNum, List<Integer> activeTargets){
+    private void targetLaser(int targetNum){
         if(!activeTargets.contains(targetNum))
             return;
 
-        api.laserControl(true); Log.i(TAG, "Laser on.");
+        api.laserControl(true); Log.i(TAG, "Laser on."); long start = System.currentTimeMillis();
         sleep(1000);
         api.takeTargetSnapshot(targetNum);
-        api.laserControl(false); Log.i(TAG, "Laser off.");
+        Log.i(TAG, "Laser off after being on for: " + (System.currentTimeMillis() - start)/1000 + "s");
     }
 
     /**

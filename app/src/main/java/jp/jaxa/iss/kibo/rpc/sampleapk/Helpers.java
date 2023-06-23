@@ -54,13 +54,12 @@ class Constants {
      );
 
      static final Coordinate targetQR = new Coordinate(
-             new Point(11.369f, -8.5518f, 4.7818f), new Quaternion(0.707f, 0f, -0.707f, 0f),
+             new Point(11.369, -8.5518, 4.40), new Quaternion(0.707f, 0f, -0.707f, 0f),
              parentThreeFiveSixQR
      );
      static final Coordinate goal = new Coordinate(
              new Point(11.143, -6.7607, 4.48), new Quaternion(0, 0, -0.707f, 0.707f),
              parentFourGoal
-
      );
     
     /*OTHER CONSTANTS**/
@@ -107,27 +106,30 @@ class Coordinate {
     
     boolean hasParent() {return has_parent;}
 
+    @SuppressWarnings("unused")
     void setPoint(Point pt) {point = pt;}
+    @SuppressWarnings("unused")
     void setQuaternion(Quaternion qt) {quaternion = qt;}
+    @SuppressWarnings("unused")
     void setParent(Coordinate prt) {parent = prt; has_parent = true;}
 }
 
-class LaserTarget {
-     float
-            height,
-            width,
-            dotRadius,
-            distEdgeToApriltag,
-            distVertCenterApriltagToCenterDot,
-            distHorizCenterApriltagToCenterDot;
-
-    // all units are in centimeters
-    LaserTarget(float dotRadius) {
-        height = 15f;
-        width = 27f;
-        distEdgeToApriltag = 1.25f;
-        distVertCenterApriltagToCenterDot = 3.75f;
-        distHorizCenterApriltagToCenterDot = 10f;
-        this.dotRadius = dotRadius;
-    }
-}
+//@SuppressWarnings("unused")
+//class LaserTarget {
+//     float height,
+//            width,
+//            dotRadius,
+//            distEdgeToApriltag,
+//            distVertCenterApriltagToCenterDot,
+//            distHorizCenterApriltagToCenterDot;
+//
+//    // all units are in centimeters
+//    LaserTarget(float dotRadius) {
+//        height = 15f;
+//        width = 27f;
+//        distEdgeToApriltag = 1.25f;
+//        distVertCenterApriltagToCenterDot = 3.75f;
+//        distHorizCenterApriltagToCenterDot = 10f;
+//        this.dotRadius = dotRadius;
+//    }
+//}
