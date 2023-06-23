@@ -43,6 +43,7 @@ public class YourService extends KiboRpcService {
 
     @Override
     protected void runPlan1(){
+
         // start mission and initialize data
         api.startMission();
         initCam(SIM);
@@ -98,20 +99,21 @@ public class YourService extends KiboRpcService {
      */
     @SuppressWarnings("UnusedReturnValue")
     private int moveTo(Coordinate coordinate, boolean scanTag, boolean QR){
-        int target = 0;
+        int target = targetList.indexOfValue(coordinate);
         if(coordinate.hasParent()){ moveTo(coordinate.getParent(), false, false); }
 
         moveTo(coordinate.getPoint(), coordinate.getQuaternion());
         sleep(1500);
         if(scanTag) {
-            target = getTagInfo(targetList.indexOfValue(coordinate));
+            @SuppressWarnings("unused")
+            int checkTarget = getTagInfo(target);
             //TODO fix laser targeting
             targetLaser(target, coordinate.getPoint(), coordinate.getQuaternion());
         }
         if(QR) { mQrContent = scanQR(); }
         sleep(1500);
 
-        if(coordinate.hasParent()){ moveTo(coordinate.getParent(), false, false); }
+        if(coordinate.hasParent() && (target != 8)){ moveTo(coordinate.getParent(), false, false); }
         return target;
     }
 
@@ -333,10 +335,10 @@ public class YourService extends KiboRpcService {
 
         Log.i(TAG, "Adjusting Kinematics for Laser Pointer");
         //TODO fix this to make laser accurate
-//        moveTo(
-//                new Point(currPt.getX() - 0.1302, currPt.getY() - 0.0572, currPt.getZ()),
-//                currQt
-//        );
+        moveTo(
+                new Point(currPt.getX() - 0.1302, currPt.getY() - 0.0572, currPt.getZ()),
+                currQt
+        );
 
         long start = System.currentTimeMillis();
         api.laserControl(true);
