@@ -8,8 +8,6 @@ import java.util.ArrayList;
 import java.util.Random;
 
 import gov.nasa.arc.astrobee.Result;
-import gov.nasa.arc.astrobee.Kinematics;
-import gov.nasa.arc.astrobee.Kinematics.Confidence;
 import gov.nasa.arc.astrobee.types.Point;
 import gov.nasa.arc.astrobee.types.Quaternion;
 
@@ -43,8 +41,8 @@ public class YourService extends KiboRpcService {
 
     @Override
     protected void runPlan1(){
-
         // start mission and initialize data
+        long startTime = System.currentTimeMillis();
         api.startMission();
         initCam(SIM);
         initMovementMap();
@@ -57,38 +55,29 @@ public class YourService extends KiboRpcService {
         moveTo(Constants.start, false, false);
 
         // go through all game phases
-        // TODO fix this janky piece of code
-        //for(int phases = 1; phases <= 4; phases++) {
-            //Log.i(TAG, "Entering Phase #" + phases);
+        //TODO phase strategy
         for (int i : activeTargets)
             moveTo(targetList.get(i), true, false);
 
-            //activeTargets = api.getActiveTargets();
-        //}
-
         // get QR code content if there's an available minute
-        if(api.getTimeRemaining().get(1) < 60000) {
-            moveTo(targetList.get(7), false, true);
-            Log.i(TAG, "QR Content: " + mQrContent);
-        }
+        moveTo(targetList.get(7), false, true);
+        Log.i(TAG, "QR Content: " + mQrContent);
 
         // notify that astrobee is heading to the goal
         api.notifyGoingToGoal();
         moveTo(targetList.get(8), false, false);
 
         // send mission completion
+        long deltaTime = System.currentTimeMillis() - startTime;
+        Log.i(TAG, "runPlan1() executed in: " + deltaTime/1000 + "s.");
         api.reportMissionCompletion(mQrContent);
     }
 
     @Override
-    protected void runPlan2(){
-        // write your plan 2 here
-    }
+    protected void runPlan2(){ /* write your plan 2 here */ }
 
     @Override
-    protected void runPlan3(){
-        // write your plan 3 here
-    }
+    protected void runPlan3(){ /* write your plan 3 here */ }
 
     /**
      * moveTo Coordinate wrapper method
@@ -100,20 +89,25 @@ public class YourService extends KiboRpcService {
     @SuppressWarnings("UnusedReturnValue")
     private int moveTo(Coordinate coordinate, boolean scanTag, boolean QR){
         int target = targetList.indexOfValue(coordinate);
-        if(coordinate.hasParent()){ moveTo(coordinate.getParent(), false, false); }
+
+        if(coordinate.hasParent())
+            moveTo(coordinate.getParent(), false, false);
 
         moveTo(coordinate.getPoint(), coordinate.getQuaternion());
         sleep(1500);
         if(scanTag) {
-            @SuppressWarnings("unused")
-            int checkTarget = getTagInfo(target);
+            getTagInfo(target);
             //TODO fix laser targeting
             targetLaser(target, coordinate.getPoint(), coordinate.getQuaternion());
         }
-        if(QR) { mQrContent = scanQR(); }
+        if(QR) {
+            mQrContent = scanQR();
+        }
         sleep(1500);
 
-        if(coordinate.hasParent() && (target != 8)){ moveTo(coordinate.getParent(), false, false); }
+        if(coordinate.hasParent() && (target != 8))
+            moveTo(coordinate.getParent(), false, false);
+
         return target;
     }
 
@@ -203,16 +197,18 @@ public class YourService extends KiboRpcService {
      * Processes NavCam Matrix and Scans for AprilTags within NavCam
      * @return the ID of the Target found in the NavCam, and 0 if none found.
      */
+    @SuppressWarnings("UnusedReturnValue")
     private int getTagInfo(@SuppressWarnings("unused") int tagNum){
         Log.i(TAG, "Calling getTagInfo() function");
         long start = System.currentTimeMillis();
 
-        Mat undistorted = new Mat(),
+        Mat
+                undistorted = new Mat(),
                 ids = new Mat();
 
         api.flashlightControlFront(0.05f); // enable flashlight for tag read clarity
         Mat distorted = api.getMatNavCam();
-        api.flashlightControlFront(0.0f);
+        api.flashlightControlFront(0.00f);
 
         Imgproc.undistort(distorted, undistorted, camMat, distCoeff);
         Log.i(TAG, "Undistorted Image Successfully");
@@ -224,7 +220,7 @@ public class YourService extends KiboRpcService {
         Aruco.detectMarkers(undistorted, dict, detectedMarkers, ids, detParams);
         List<Integer> markerIds = getIdsFromMat(ids);
 
-        int iters = 0, iter_max = 10;
+        int iters = 0, iter_max = 10, target = 0;
         while(markerIds.size() == 0 && iters < iter_max){
             Log.i(TAG, "No Markers found. Trying again [" + iters + "]");
             Aruco.detectMarkers(undistorted, dict, detectedMarkers, ids, detParams);
@@ -236,13 +232,12 @@ public class YourService extends KiboRpcService {
         }
         Log.i(TAG, "Marker IDs Found: " + markerIds.toString());
 
-        int target = 0;
         if (containsAny(markerIds, Constants.targetOneIDs)){target = 1;}
         else if (containsAny(markerIds, Constants.targetTwoIDs)){target = 2;}
-        else if (containsAny(markerIds, Constants.targetThreeIDs)) {target = 3;}
-        else if (containsAny(markerIds, Constants.targetFourIDs)) {target = 4;}
-        else if (containsAny(markerIds, Constants.targetFiveIDs)) {target = 5;}
-        else if (containsAny(markerIds, Constants.targetSixIDs)) {target = 6;}
+        else if (containsAny(markerIds, Constants.targetThreeIDs)){target = 3;}
+        else if (containsAny(markerIds, Constants.targetFourIDs)){target = 4;}
+        else if (containsAny(markerIds, Constants.targetFiveIDs)){target = 5;}
+        else if (containsAny(markerIds, Constants.targetSixIDs)){target = 6;}
 
         long delta = (System.currentTimeMillis() - start)/1000;
         Log.i(TAG, "Found Target #" + target);
@@ -316,22 +311,9 @@ public class YourService extends KiboRpcService {
      * Method to handle Laser Targeting
      * @param targetNum the laser to target
      */
-    private void targetLaser(int targetNum, Point cPt, Quaternion cQt){
+    private void targetLaser(int targetNum, Point currPt, Quaternion currQt){
         if(!activeTargets.contains(targetNum))
             return;
-
-        Point currPt;
-        Quaternion currQt;
-
-        Kinematics kinematics = api.getRobotKinematics();
-        Log.i(TAG, "Laser Kinematics Confidence: " + kinematics.getConfidence().name());
-        if(kinematics.getConfidence() != Confidence.GOOD) {
-            currPt = cPt;
-            currQt = cQt;
-        } else {
-            currPt = kinematics.getPosition();
-            currQt = kinematics.getOrientation();
-        }
 
         Log.i(TAG, "Adjusting Kinematics for Laser Pointer");
         //TODO fix this to make laser accurate
