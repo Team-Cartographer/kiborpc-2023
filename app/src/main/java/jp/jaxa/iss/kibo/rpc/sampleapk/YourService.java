@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.Random;
 
 import gov.nasa.arc.astrobee.Result;
+import gov.nasa.arc.astrobee.Kinematics;
+import gov.nasa.arc.astrobee.Kinematics.Confidence;
 import gov.nasa.arc.astrobee.types.Point;
 import gov.nasa.arc.astrobee.types.Quaternion;
 
@@ -31,7 +33,7 @@ public class YourService extends KiboRpcService {
 
     Mat camMat, distCoeff;
     SparseArray<Coordinate> targetList;
-    String mQrContent;
+    String mQrContent = "No QR Content could be found.";
     List<Integer> activeTargets;
 
     final String
@@ -55,14 +57,13 @@ public class YourService extends KiboRpcService {
 
         // go through all game phases
         // TODO fix this janky piece of code
-        for(int phases = 1; phases <= 4; phases++) {
-            Log.i(TAG, "Entering Phase #" + phases);
-            for (int i : activeTargets) {
-                moveTo(targetList.get(i), true, false);
-                targetLaser(i);
-            }
-            activeTargets = api.getActiveTargets();
-        }
+        //for(int phases = 1; phases <= 4; phases++) {
+            //Log.i(TAG, "Entering Phase #" + phases);
+        for (int i : activeTargets)
+            moveTo(targetList.get(i), true, false);
+
+            //activeTargets = api.getActiveTargets();
+        //}
 
         // get QR code content if there's an available minute
         if(api.getTimeRemaining().get(1) < 60000) {
@@ -104,7 +105,8 @@ public class YourService extends KiboRpcService {
         sleep(1500);
         if(scanTag) {
             target = getTagInfo(targetList.indexOfValue(coordinate));
-            targetLaser(target);
+            //TODO fix laser targeting
+            targetLaser(target, coordinate.getPoint(), coordinate.getQuaternion());
         }
         if(QR) { mQrContent = scanQR(); }
         sleep(1500);
@@ -312,12 +314,35 @@ public class YourService extends KiboRpcService {
      * Method to handle Laser Targeting
      * @param targetNum the laser to target
      */
-    private void targetLaser(int targetNum){
+    private void targetLaser(int targetNum, Point cPt, Quaternion cQt){
         if(!activeTargets.contains(targetNum))
             return;
 
-        api.laserControl(true); Log.i(TAG, "Laser on."); long start = System.currentTimeMillis();
+        Point currPt;
+        Quaternion currQt;
+
+        Kinematics kinematics = api.getRobotKinematics();
+        Log.i(TAG, "Laser Kinematics Confidence: " + kinematics.getConfidence().name());
+        if(kinematics.getConfidence() != Confidence.GOOD) {
+            currPt = cPt;
+            currQt = cQt;
+        } else {
+            currPt = kinematics.getPosition();
+            currQt = kinematics.getOrientation();
+        }
+
+        Log.i(TAG, "Adjusting Kinematics for Laser Pointer");
+        //TODO fix this to make laser accurate
+//        moveTo(
+//                new Point(currPt.getX() - 0.1302, currPt.getY() - 0.0572, currPt.getZ()),
+//                currQt
+//        );
+
+        long start = System.currentTimeMillis();
+        api.laserControl(true);
+        Log.i(TAG, "Laser on.");
         sleep(1000);
+
         api.takeTargetSnapshot(targetNum);
         Log.i(TAG, "Laser off after being on for: " + (System.currentTimeMillis() - start)/1000 + "s");
     }
