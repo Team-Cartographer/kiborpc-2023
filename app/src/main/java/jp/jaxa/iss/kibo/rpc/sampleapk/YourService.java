@@ -73,13 +73,12 @@ public class YourService extends KiboRpcService {
                     if(!(api.getTimeRemaining().get(1) > 120000)){
                         if(activeTargets.size() >= 2){
                             activeTargets.remove(targetToHit);
-                            targetToHit = activeTargets.get(0);
-                        }
-                    }
-                }
-            }
+                            targetToHit = activeTargets.get(0); }}}}
 
             Log.i(TAG, "Going for target #" + targetToHit);
+
+            if(api.getTimeRemaining().get(1) < 60000) // failsafe
+                break;
 
             moveTo(targetList.get(targetToHit), true, false);
             phase++;
@@ -135,7 +134,7 @@ public class YourService extends KiboRpcService {
     }
 
     /**
-     * Wrapper function for api.moveTo(point, quaternion, boolean) to make a fail-safe
+     * Wrapper function for api.moveTo(point, quaternion, boolean) to make a failsafe
      * in case initial movement fails, and log movement details.
      * @param point the Point to move to
      * @param quaternion the Quaternion to angle Astrobee to
