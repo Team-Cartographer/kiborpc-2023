@@ -79,7 +79,7 @@ class Constants {
     static final int[] targetSixIDs = {21, 22, 23, 24};
 }
 
-
+@SuppressWarnings("unused")
 class Coordinate {
     private Point point;
     private Quaternion quaternion;
@@ -103,17 +103,14 @@ class Coordinate {
         has_parent = true;
     }
 
+    boolean hasParent() {return has_parent;}
+
     Point getPoint() {return point;}
     Quaternion getQuaternion() {return quaternion;}
     Coordinate getParent() {return parent;}
-    
-    boolean hasParent() {return has_parent;}
 
-    @SuppressWarnings("unused")
     void setPoint(Point pt) {point = pt;}
-    @SuppressWarnings("unused")
     void setQuaternion(Quaternion qt) {quaternion = qt;}
-    @SuppressWarnings("unused")
     void setParent(Coordinate prt) {parent = prt; has_parent = true;}
 }
 
@@ -147,6 +144,17 @@ class ListUtils {
                 maxTarget = target; }}
 
         return maxTarget;
+    }
+
+    static boolean sameMapValues(SparseIntArray map){
+        int firstVal = map.valueAt(0);
+
+        for(int i = 1; i < map.size(); i++){
+            int cVal = map.valueAt(i);
+            if(cVal != firstVal) return false;
+        }
+
+        return  true;
     }
 }
 
