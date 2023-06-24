@@ -28,6 +28,7 @@ import android.util.SparseIntArray;
 /**
  * Class meant to handle commands from the Ground Data System and execute them in Astrobee
  */
+@SuppressWarnings("SpellCheckingInspection")
 public class YourService extends KiboRpcService {
 
     Mat camMat, distCoeff;
@@ -46,6 +47,7 @@ public class YourService extends KiboRpcService {
             IRL = "Orbit";
 
     @Override
+    @SuppressWarnings("SpellCheckingInspection")
     protected void runPlan1(){
         // start mission and initialize data
         long startTime = System.currentTimeMillis();
@@ -219,7 +221,7 @@ public class YourService extends KiboRpcService {
      * Processes NavCam Matrix and Scans for AprilTags within NavCam
      * @return the ID of the Target found in the NavCam, and 0 if none found.
      */
-    @SuppressWarnings({"UnusedReturnValue", "unused"})
+    @SuppressWarnings({"UnusedReturnValue", "unused", "SpellCheckingInspection"})
     private int getTagInfo(int tagNum){
         Log.i(TAG, "Calling getTagInfo() function");
         long start = System.currentTimeMillis();
@@ -274,6 +276,7 @@ public class YourService extends KiboRpcService {
      * (Returns to central position to avoid KOZ)
      * @return QR Code Content as a String
      */
+    @SuppressWarnings("SpellCheckingInspection")
     private String scanQR() {
         Log.i(TAG, "Arrived at QR Code");
 
