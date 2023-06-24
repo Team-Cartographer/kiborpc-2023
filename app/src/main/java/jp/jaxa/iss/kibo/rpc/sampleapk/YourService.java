@@ -23,6 +23,7 @@ import org.opencv.objdetect.QRCodeDetector;
 
 import android.util.Log;
 import android.util.SparseArray;
+import android.util.SparseIntArray;
 
 /**
  * Class meant to handle commands from the Ground Data System and execute them in Astrobee
@@ -30,9 +31,14 @@ import android.util.SparseArray;
 public class YourService extends KiboRpcService {
 
     Mat camMat, distCoeff;
+
     SparseArray<Coordinate> targetList;
-    String mQrContent = "No QR Content could be found.";
+    SparseArray<List<Integer>> parentIDInfo;
+    SparseIntArray pointMap;
     List<Integer> activeTargets;
+
+    String mQrContent = "No QR Content could be found.";
+    int currParent = 0;
 
     final String
             TAG = "CARTOGRAPHER",
@@ -43,25 +49,41 @@ public class YourService extends KiboRpcService {
     protected void runPlan1(){
         // start mission and initialize data
         long startTime = System.currentTimeMillis();
+        int phase = 1;
+
         api.startMission();
         initCam(SIM);
-        initMovementMap();
+        initMaps();
 
-        // get the list of active target id
-        activeTargets = api.getActiveTargets();
-        Log.i(TAG, "Active Targets: " + activeTargets.toString());
-
-        // move to start position
         moveTo(Constants.start, false, false);
 
-        // go through all game phases
-        //TODO phase strategy
-        for (int i : activeTargets)
-            moveTo(targetList.get(i), true, false);
-
-        // get QR code content if there's an available minute
+        // get QR code content
+        Log.i(TAG, "Heading to QR Code");
         moveTo(targetList.get(7), false, true);
         Log.i(TAG, "QR Content: " + mQrContent);
+
+        while(api.getTimeRemaining().get(1) > 60000 && phase < 4) {
+            activeTargets = api.getActiveTargets();
+            Log.i(TAG, "Active Targets: " + activeTargets.toString());
+
+            int targetToHit = ListUtils.findMaxFromMap(activeTargets, pointMap);
+
+            if(!parentIDInfo.get(currParent).contains(targetToHit)){
+                if(!(targetList.get(targetToHit).getParent().parentID > currParent)){
+                    if(!(api.getTimeRemaining().get(1) > 120000)){
+                        if(activeTargets.size() >= 2){
+                            activeTargets.remove(targetToHit);
+                            targetToHit = activeTargets.get(0);
+                        }
+                    }
+                }
+            }
+
+            Log.i(TAG, "Going for target #" + targetToHit);
+
+            moveTo(targetList.get(targetToHit), true, false);
+            phase++;
+        }
 
         // notify that astrobee is heading to the goal
         api.notifyGoingToGoal();
@@ -90,19 +112,20 @@ public class YourService extends KiboRpcService {
     private int moveTo(Coordinate coordinate, boolean scanTag, boolean QR){
         int target = targetList.indexOfValue(coordinate);
 
-        if(coordinate.hasParent())
-            moveTo(coordinate.getParent(), false, false);
+        if(coordinate.hasParent()) {
+            Coordinate parent = coordinate.getParent();
+            moveTo(parent, false, false);
+            currParent = parent.parentID;
+            Log.i(TAG, "Current Parent ID: " + currParent);
+        }
 
         moveTo(coordinate.getPoint(), coordinate.getQuaternion());
         sleep(1500);
-        if(scanTag) {
-            getTagInfo(target);
-            //TODO fix laser targeting
-            targetLaser(target, coordinate.getPoint(), coordinate.getQuaternion());
-        }
-        if(QR) {
+        if(scanTag) // getTagInfo(target) removed
+            targetLaser(target);
+        else if(QR)
             mQrContent = scanQR();
-        }
+
         sleep(1500);
 
         if(coordinate.hasParent() && (target != 8))
@@ -197,8 +220,8 @@ public class YourService extends KiboRpcService {
      * Processes NavCam Matrix and Scans for AprilTags within NavCam
      * @return the ID of the Target found in the NavCam, and 0 if none found.
      */
-    @SuppressWarnings("UnusedReturnValue")
-    private int getTagInfo(@SuppressWarnings("unused") int tagNum){
+    @SuppressWarnings({"UnusedReturnValue", "unused"})
+    private int getTagInfo(int tagNum){
         Log.i(TAG, "Calling getTagInfo() function");
         long start = System.currentTimeMillis();
 
@@ -232,12 +255,12 @@ public class YourService extends KiboRpcService {
         }
         Log.i(TAG, "Marker IDs Found: " + markerIds.toString());
 
-        if (containsAny(markerIds, Constants.targetOneIDs)){target = 1;}
-        else if (containsAny(markerIds, Constants.targetTwoIDs)){target = 2;}
-        else if (containsAny(markerIds, Constants.targetThreeIDs)){target = 3;}
-        else if (containsAny(markerIds, Constants.targetFourIDs)){target = 4;}
-        else if (containsAny(markerIds, Constants.targetFiveIDs)){target = 5;}
-        else if (containsAny(markerIds, Constants.targetSixIDs)){target = 6;}
+        if (ListUtils.containsAny(markerIds, Constants.targetOneIDs)){target = 1;}
+        else if (ListUtils.containsAny(markerIds, Constants.targetTwoIDs)){target = 2;}
+        else if (ListUtils.containsAny(markerIds, Constants.targetThreeIDs)){target = 3;}
+        else if (ListUtils.containsAny(markerIds, Constants.targetFourIDs)){target = 4;}
+        else if (ListUtils.containsAny(markerIds, Constants.targetFiveIDs)){target = 5;}
+        else if (ListUtils.containsAny(markerIds, Constants.targetSixIDs)){target = 6;}
 
         long delta = (System.currentTimeMillis() - start)/1000;
         Log.i(TAG, "Found Target #" + target);
@@ -311,37 +334,20 @@ public class YourService extends KiboRpcService {
      * Method to handle Laser Targeting
      * @param targetNum the laser to target
      */
-    private void targetLaser(int targetNum, Point currPt, Quaternion currQt){
+    private void targetLaser(int targetNum){
         if(!activeTargets.contains(targetNum))
             return;
 
-        Log.i(TAG, "Adjusting Kinematics for Laser Pointer");
-        //TODO fix this to make laser accurate
-        moveTo(
-                new Point(currPt.getX() - 0.1302, currPt.getY() - 0.0572, currPt.getZ()),
-                currQt
-        );
-
         long start = System.currentTimeMillis();
+
         api.laserControl(true);
         Log.i(TAG, "Laser on.");
         sleep(1000);
-
         api.takeTargetSnapshot(targetNum);
-        Log.i(TAG, "Laser off after being on for: " + (System.currentTimeMillis() - start)/1000 + "s");
-    }
+        Log.i(TAG, "Took Target #" + targetNum + " snapshot successfully.");
 
-    /**
-     * Checks if a list contains any elements from an int[] array
-     * @param arrayList the list to check
-     * @param elements the elements to find
-     * @return true if any elements from elements[] are in arrayList<>
-     */
-    private boolean containsAny(List<Integer> arrayList, int[] elements) {
-        for (int element : elements) {
-            if (arrayList.contains(element)) {
-                return true; }}
-        return false;
+        Log.i(TAG, "Laser off after being on for: " +
+                ((System.currentTimeMillis() - start)/1000)/60 + "s");
     }
 
     /**
@@ -360,10 +366,10 @@ public class YourService extends KiboRpcService {
     }
 
     /**
-     * Initializes the SparseArray with the coordinate constants for simplified movement
-     * based on Integers rather than <code>Constants.target</code>
+     * Initializes all data structures based on Map<> or List<>
+     * Post-condition: targetList, parentIDInfo, and pointMap are initialized
      */
-    private void initMovementMap(){
+    private void initMaps(){
         targetList = new SparseArray<>();
         targetList.put(0, Constants.start);
         targetList.put(1, Constants.targetOne);
@@ -375,6 +381,21 @@ public class YourService extends KiboRpcService {
         targetList.put(7, Constants.targetQR);
         targetList.put(8, Constants.goal);
         Log.i(TAG, "Initialized Movement SparseArray");
+
+        parentIDInfo = new SparseArray<>();
+        List<Integer> one_two = new ArrayList<Integer>(){{add(1); add(2);}};
+        List<Integer> three_five_six_qr = new ArrayList<Integer>(){{add(3); add(5); add(6); add(7);}};
+        List<Integer> four_goal = new ArrayList<Integer>(){{add(4); add(8);}};
+        parentIDInfo.put(1, one_two);
+        parentIDInfo.put(2, three_five_six_qr);
+        parentIDInfo.put(3, four_goal);
+        Log.i(TAG, "Initialized Parent ID SparseArray");
+
+        pointMap = new SparseIntArray();
+        pointMap.put(1, 30); pointMap.put(2, 20);
+        pointMap.put(3, 40); pointMap.put(4, 20);
+        pointMap.put(5, 30); pointMap.put(6, 30);
+        Log.i(TAG, "Initialized Points SparseIntArray");
     }
 
     /**
@@ -388,4 +409,5 @@ public class YourService extends KiboRpcService {
             e.printStackTrace();
         }
     }
+
 }
