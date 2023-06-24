@@ -132,7 +132,7 @@ class ListUtils {
         return false;
     }
 
-    @SuppressWarnings("unused")
+    @SuppressWarnings("all")
     static boolean containsAll(List<Integer> arrayList, int[] elements){
         return arrayList.containsAll(Arrays.asList(elements));
     }
