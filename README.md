@@ -2,7 +2,8 @@
 <u>My submission to the 2023 <a href=https://jaxa.krpc.jp/>Kibo Robot Programming Challenge</a></u><br>
 --> For more information about the challenge, please refer to the Guidebook, Rulebook, or Programming Manual at <a href=https://jaxa.krpc.jp/download>this link</a>
 
-For code, go to <a href=app/src/main/java/jp/jaxa/iss/kibo/rpc/sampleapk>app/src/main/java/jp/jaxa/iss/kibo/rpc/sampleapk</a>
+For the code, go to <a href=app/src/main/java/jp/jaxa/iss/kibo/rpc/sampleapk>app/src/main/java/jp/jaxa/iss/kibo/rpc/sampleapk</a>
+<a href=https://streamable.com/lxrv9x>Video of 156.5pt Run</a> (2x Speed for Convenience, actual time was 4m30s7ms): 
 
 Thank you for reading!
 
