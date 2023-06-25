@@ -5,7 +5,7 @@
 For the code, go to <a href=app/src/main/java/jp/jaxa/iss/kibo/rpc/sampleapk>app/src/main/java/jp/jaxa/iss/kibo/rpc/sampleapk</a><br>
 <br>
 <a href=https://streamable.com/lxrv9x>Video of 156.5pt Run</a> (2x Speed for Convenience, actual time was 4m30s7ms)<br>
-For submission logs and images, go to <a href=SubmissionAPKLogs/> and Ctrl+F for tag: CARTOGRAPHER in adb.log. 
+For submission logs and images, go to <a href=SubmissionAPKLogs/><SubmissionAPKLogs</a> and Ctrl+F for tag: CARTOGRAPHER in adb.log. 
 
 Thank you for reading!
 
