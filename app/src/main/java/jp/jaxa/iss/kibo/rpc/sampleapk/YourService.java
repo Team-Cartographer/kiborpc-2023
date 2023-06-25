@@ -32,7 +32,6 @@ import android.util.SparseIntArray;
 public class YourService extends KiboRpcService {
 
     Mat camMat, distCoeff;
-
     List<Integer> activeTargets, prevTargets = new ArrayList<>();
     SparseArray<Coordinate> targetList;
     SparseArray<List<Integer>> parentIDInfo;
@@ -56,17 +55,12 @@ public class YourService extends KiboRpcService {
         initCam(SIM);
         initMaps();
 
-        // get QR code content
-        Log.i(TAG, "Heading to QR Code");
-        moveTo(targetList.get(7), false, true); // Time Cost: 1m10s
-        Log.i(TAG, "QR Content: " + mQrContent);
-
         // move to targets and maximize points per phase
-        while(api.getTimeRemaining().get(1) > 60000 && phase <= 3) {
+        while(api.getTimeRemaining().get(1) > 88000 && phase <= 3) {
             Log.i(TAG, "Entered phase #" + phase);
             int targetToHit = 0;
 
-            if(api.getTimeRemaining().get(1) <= 60000 && phase == 3) {
+            if(api.getTimeRemaining().get(1) <= 88000 && phase == 3) {
                 Log.i(TAG, "Breaking loop to prioritize time");
                 break;
             }
@@ -79,9 +73,9 @@ public class YourService extends KiboRpcService {
             if(activeTargets.size() > 1)
                 targetToHit = STRATEGIZE(targetToHit);
 
-            if(api.getTimeRemaining().get(1) < 60000) break;
-            Log.i(TAG, "Going for target #" + targetToHit);
+            if(api.getTimeRemaining().get(1) < 88000) break;
 
+            Log.i(TAG, "Going for target #" + targetToHit);
             moveTo(targetList.get(targetToHit), true, false);
 
             Log.i(TAG, "Time Remaining After Target #" + targetToHit + ": " +
@@ -90,6 +84,13 @@ public class YourService extends KiboRpcService {
             phase++;
         }
         Log.i(TAG, "Broke out of loop");
+
+        if(prevTargets.get(prevTargets.size() - 1) != 4 && api.getTimeRemaining().get(1) > 85000) {
+            Log.i(TAG, "Heading to QR Code");
+            moveTo(targetList.get(7), false, true); // Time Cost: 1m10s
+        } else Log.i(TAG, "Skipped QR Code to prioritize time.");
+
+        Log.i(TAG, "QR Content: " + mQrContent);
 
         // notify that astrobee is heading to the goal
         api.notifyGoingToGoal();
@@ -148,7 +149,7 @@ public class YourService extends KiboRpcService {
         if (scanTag) targetLaser(target);
         else if (QR) mQrContent = scanQR();
 
-        if(coordinate.hasParent() && (target != 8)) {
+        if(coordinate.hasParent() && (target != 4) && (target != 8)) {
             Coordinate parent = coordinate.getParent();
             moveTo(parent, false, false);
             currParent = parent.parentID;
@@ -156,95 +157,6 @@ public class YourService extends KiboRpcService {
         }
 
         return target;
-    }
-
-    /**
-     * Handle quicker movements between targets that don't require a parent
-     * @param target the target to move to
-     * @return 0 if success, 1 if fail, 2 if time's up
-     */
-    private int quickMove(int target){
-        int lastHit = 0;
-        if(prevTargets.size() != 0) lastHit = prevTargets.get(prevTargets.size() - 1);
-        long timeLeft = api.getTimeRemaining().get(1);
-
-        if(((lastHit == 1 && target == 4) || (lastHit == 4 && target == 1)) && timeLeft >= 50000) {
-            Point pt = targetList.get(target).getPoint();
-            Quaternion qt = targetList.get(target).getQuaternion();
-
-            moveTo(pt, qt);
-            api.laserControl(true);
-            api.takeTargetSnapshot(target);
-            return 0;
-        } else if(timeLeft < 50000) return 2;
-
-        timeLeft = api.getTimeRemaining().get(1);
-        if(((lastHit == 1 && target == 5) || (lastHit == 5 && target == 1)) && timeLeft >= 50000){
-            Point pt = targetList.get(target).getPoint();
-            Quaternion qt = targetList.get(target).getQuaternion();
-
-            moveTo(pt, qt);
-            api.laserControl(true);
-            api.takeTargetSnapshot(target);
-            return 0;
-        } else if(timeLeft < 50000) return 2;
-
-        timeLeft = api.getTimeRemaining().get(1);
-        if(((lastHit == 1 && target == 6) || (lastHit == 6 && target == 1)) && timeLeft >= 50000){
-            Point pt = targetList.get(target).getPoint();
-            Quaternion qt = targetList.get(target).getQuaternion();
-
-            moveTo(pt, qt);
-            api.laserControl(true);
-            api.takeTargetSnapshot(target);
-            return 0;
-        } else if(timeLeft < 50000) return 2;
-
-        timeLeft = api.getTimeRemaining().get(1);
-        if(((lastHit == 2 && target == 6) || (lastHit == 6 && target == 2)) && timeLeft >= 50000){
-            Point pt = targetList.get(target).getPoint();
-            Quaternion qt = targetList.get(target).getQuaternion();
-
-            moveTo(pt, qt);
-            api.laserControl(true);
-            api.takeTargetSnapshot(target);
-            return 0;
-        } else if(timeLeft < 50000) return 2;
-
-        timeLeft = api.getTimeRemaining().get(1);
-        if(((lastHit == 4 && target == 5) || (lastHit == 5 && target == 4)) && timeLeft >= 50000){
-            Point pt = targetList.get(target).getPoint();
-            Quaternion qt = targetList.get(target).getQuaternion();
-
-            moveTo(pt, qt);
-            api.laserControl(true);
-            api.takeTargetSnapshot(target);
-            return 0;
-        } else if(timeLeft < 50000) return 2;
-
-        timeLeft = api.getTimeRemaining().get(1);
-        if(((lastHit == 4 && target == 6) || (lastHit == 6 && target == 4)) && timeLeft >= 50000){
-            Point pt = targetList.get(target).getPoint();
-            Quaternion qt = targetList.get(target).getQuaternion();
-
-            moveTo(pt, qt);
-            api.laserControl(true);
-            api.takeTargetSnapshot(target);
-            return 0;
-        } else if(timeLeft < 50000) return 2;
-
-        timeLeft = api.getTimeRemaining().get(1);
-        if(((lastHit == 5 && target == 6) || (lastHit == 6 && target == 5)) && timeLeft >= 50000){
-            Point pt = targetList.get(target).getPoint();
-            Quaternion qt = targetList.get(target).getQuaternion();
-
-            moveTo(pt, qt);
-            api.laserControl(true);
-            api.takeTargetSnapshot(target);
-            return 0;
-        } else if(timeLeft < 50000) return 2;
-        
-        return 1;
     }
 
     /**
@@ -409,7 +321,7 @@ public class YourService extends KiboRpcService {
         Mat QR = new Mat();
         Imgproc.undistort(distorted, QR, camMat, distCoeff);
 
-        api.saveMatImage(QR, "QRCodeImage.png");
+        api.saveMatImage(QR, "qrCode.png");
 
         Log.i(TAG, "Attempting QR Code Scan");
         Mat points = new Mat();
@@ -454,6 +366,7 @@ public class YourService extends KiboRpcService {
         long start = System.currentTimeMillis();
 
         api.laserControl(true);
+        api.saveMatImage(api.getMatNavCam(), "target_" + targetNum + ".png");
         Log.i(TAG, "Laser on.");
         sleep(1000);
         api.takeTargetSnapshot(targetNum);
@@ -545,32 +458,26 @@ public class YourService extends KiboRpcService {
             if(activeTargets.contains(1)) activeTargets.remove(activeTargets.indexOf(1));
             if(activeTargets.contains(2)) activeTargets.remove(activeTargets.indexOf(2));
             targetToHit = activeTargets.get(0);
-            return targetToHit;
-        }
+            return targetToHit; }
 
         if(activeTargets.contains(4) && phase == 3) {
             targetToHit = 4;
-            return targetToHit;
-        }
+            return targetToHit; }
 
         if(targetToHit == 4 && phase != 3) {
             activeTargets.remove(activeTargets.indexOf(4));
             targetToHit = activeTargets.get(0);
-            return targetToHit;
-        }
+            return targetToHit; }
 
         if(targetToHit == 2) {
             activeTargets.remove(activeTargets.indexOf(2));
             targetToHit = activeTargets.get(0);
-            return targetToHit;
-        }
+            return targetToHit; }
 
         if(activeTargets.contains(3) && targetToHit != 3 && phase != 3) {
             targetToHit = 3;
-            return targetToHit;
-        }
+            return targetToHit; }
 
         return targetToHit;
     }
-    
 }
