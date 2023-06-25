@@ -2,9 +2,7 @@
 <u>My submission to the 2023 <a href=https://jaxa.krpc.jp/>Kibo Robot Programming Challenge</a></u><br>
 --> For more information about the challenge, please refer to the Guidebook, Rulebook, or Programming Manual at <a href=https://jaxa.krpc.jp/download>this link</a>
 
-<-Table of Contents->
-- <a href=Usage>Usage</a>
-- <a href=Special Thanks>Special Thanks</a>
+For code, go to <a href=app/src/main/java/jp/jaxa/iss/kibo/rpc/sampleapk>app/src/main/java/jp/jaxa/iss/kibo/rpc/sampleapk</a>
 
 Thank you for reading!
 
