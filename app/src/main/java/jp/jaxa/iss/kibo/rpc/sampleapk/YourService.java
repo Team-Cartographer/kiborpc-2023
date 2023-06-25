@@ -83,15 +83,23 @@ public class YourService extends KiboRpcService {
                     if(activeTargets.contains(1)) activeTargets.remove(activeTargets.indexOf(1));
                     if(activeTargets.contains(2)) activeTargets.remove(activeTargets.indexOf(2));
                     targetToHit = activeTargets.get(0);
-                } else if(targetToHit == 4 && phase != 3) {
+                }
+
+                if(targetToHit == 4 && phase != 3) {
                     activeTargets.remove(activeTargets.indexOf(4));
                     targetToHit = activeTargets.get(0);
-                } else if(targetToHit == 2) {
+                }
+
+                if(targetToHit == 2) {
                     activeTargets.remove(activeTargets.indexOf(2));
                     targetToHit = activeTargets.get(0);
-                } else if(activeTargets.contains(3) && targetToHit != 3) {
+                }
+
+                if(activeTargets.contains(3) && targetToHit != 3 && phase != 3) {
                     targetToHit = 3;
-                } else if(activeTargets.contains(4) && phase == 3) {
+                }
+
+                if(activeTargets.contains(4) && phase == 3) {
                     targetToHit = 4;
                 }
             }
@@ -159,8 +167,7 @@ public class YourService extends KiboRpcService {
     private int moveTo(Coordinate coordinate, boolean scanTag, boolean QR){
         int target = targetList.indexOfValue(coordinate);
 
-        if(coordinate.hasParent() &&
-                !parentIDInfo.get(coordinate.getParent().parentID).contains(target)) {
+        if(coordinate.hasParent()) {
             Coordinate parent = coordinate.getParent();
             moveTo(parent, false, false);
             currParent = parent.parentID;
