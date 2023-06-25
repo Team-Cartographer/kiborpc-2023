@@ -48,19 +48,20 @@ public class YourService extends KiboRpcService {
     @Override
     @SuppressWarnings("all")
     protected void runPlan1(){
-        // start mission and initialize data
+        // record startTime
         long startTime = System.currentTimeMillis();
 
+        // initialize data and start mission
         api.startMission();
         initCam(SIM);
         initMaps();
 
-        // move to targets and maximize points per phase
-        while(api.getTimeRemaining().get(1) > 88000 && phase <= 3) {
+        // handle movement to targets and points per phase optimization
+        while(api.getTimeRemaining().get(1) > 80000 && phase <= 3) {
             Log.i(TAG, "Entered phase #" + phase);
             int targetToHit = 0;
 
-            if(api.getTimeRemaining().get(1) <= 88000 && phase == 3) {
+            if(api.getTimeRemaining().get(1) <= 80000 && phase == 3) {
                 Log.i(TAG, "Breaking loop to prioritize time");
                 break;
             }
@@ -73,7 +74,7 @@ public class YourService extends KiboRpcService {
             if(activeTargets.size() > 1)
                 targetToHit = STRATEGIZE(targetToHit);
 
-            if(api.getTimeRemaining().get(1) < 88000) break;
+            if(api.getTimeRemaining().get(1) < 80000) break;
 
             Log.i(TAG, "Going for target #" + targetToHit);
             moveTo(targetList.get(targetToHit), true, false);
@@ -81,48 +82,33 @@ public class YourService extends KiboRpcService {
             Log.i(TAG, "Time Remaining After Target #" + targetToHit + ": " +
                     api.getTimeRemaining().get(1) + "ms");
 
+            Log.i(TAG, "Previous targets: " + prevTargets.toString());
             phase++;
         }
-        Log.i(TAG, "Broke out of loop");
+        Log.i(TAG, "Broke out of loop with " + api.getTimeRemaining().get(1) + "ms remaining");
 
-        if(prevTargets.get(prevTargets.size() - 1) != 4 && api.getTimeRemaining().get(1) > 85000) {
+        // handle QR code
+        if(prevTargets.get(prevTargets.size() - 1) != 4 && api.getTimeRemaining().get(1) > 80000) {
             Log.i(TAG, "Heading to QR Code");
             moveTo(targetList.get(7), false, true); // Time Cost: 1m10s
-        } else Log.i(TAG, "Skipped QR Code to prioritize time.");
-
+        } else {
+            scanQR(false);
+            Log.i(TAG, "Skipped QR Code to prioritize time.");
+        }
         Log.i(TAG, "QR Content: " + mQrContent);
 
         // notify that astrobee is heading to the goal
         api.notifyGoingToGoal();
         moveTo(targetList.get(8), false, false); // Time Cost: 45s
 
-        // send mission completion
+        // send mission completion and record deltaTime
         long deltaTime = System.currentTimeMillis() - startTime;
         Log.i(TAG, "runPlan1() executed in: " + deltaTime/1000 + "s.");
         api.reportMissionCompletion(mQrContent);
     }
 
-
-    /** Rename to runPlan1() for testing */
     @Override
-    protected void runPlan2(){
-        long startTime = System.currentTimeMillis();
-
-        api.startMission();
-        initCam(SIM);
-        initMaps();
-
-        // testing new parent movements
-        moveTo(targetList.get(2), false, false);
-        moveTo(targetList.get(3), false, false);
-        moveTo(targetList.get(1), false, false);
-
-        api.notifyGoingToGoal();
-        moveTo(targetList.get(8), false, false);
-        long deltaTime = System.currentTimeMillis() - startTime;
-        Log.i(TAG, "runPlan1() executed in: " + deltaTime/1000 + "s.");
-        api.reportMissionCompletion(mQrContent);
-    }
+    protected void runPlan2(){ /* write your plan 2 here */ }
 
     @Override
     protected void runPlan3(){ /* write your plan 3 here */ }
@@ -142,19 +128,17 @@ public class YourService extends KiboRpcService {
             Coordinate parent = coordinate.getParent();
             moveTo(parent, false, false);
             currParent = parent.parentID;
-            Log.i(TAG, "Current Parent ID: " + currParent);
-        }
+            Log.i(TAG, "Current Parent ID: " + currParent); }
 
         moveTo(coordinate.getPoint(), coordinate.getQuaternion());
         if (scanTag) targetLaser(target);
-        else if (QR) mQrContent = scanQR();
+        else if (QR) mQrContent = scanQR(false);
 
         if(coordinate.hasParent() && (target != 4) && (target != 8)) {
             Coordinate parent = coordinate.getParent();
             moveTo(parent, false, false);
             currParent = parent.parentID;
-            Log.i(TAG, "Current Parent ID: " + currParent);
-        }
+            Log.i(TAG, "Current Parent ID: " + currParent); }
 
         return target;
     }
@@ -300,7 +284,7 @@ public class YourService extends KiboRpcService {
      * (Returns to central position to avoid KOZ)
      * @return QR Code Content as a String
      */
-    private String scanQR() {
+    private String scanQR(boolean skipQRread) {
         Log.i(TAG, "Arrived at QR Code");
 
         Map<String, String> map = new HashMap<>();
@@ -313,22 +297,25 @@ public class YourService extends KiboRpcService {
         map.put(keys[4], "LOOKING_FORWARD_TO_SEE_YOU");
         map.put(keys[5], "NO_PROBLEM");
 
+        Mat points = new Mat(), QR = new Mat(); String data = "";
         QRCodeDetector detector = new QRCodeDetector();
 
-        api.flashlightControlFront(0.05f);
-        Mat distorted = api.getMatNavCam();
-        api.flashlightControlFront(0.0f);
-        Mat QR = new Mat();
-        Imgproc.undistort(distorted, QR, camMat, distCoeff);
+        if(!skipQRread) {
+            api.flashlightControlFront(0.05f);
+            Mat distorted = api.getMatNavCam();
+            api.flashlightControlFront(0.0f);
+            QR = new Mat();
+            Imgproc.undistort(distorted, QR, camMat, distCoeff);
 
-        api.saveMatImage(QR, "qrCode.png");
+            api.saveMatImage(QR, "qrCode.png");
 
-        Log.i(TAG, "Attempting QR Code Scan");
-        Mat points = new Mat();
-        String data = detector.detectAndDecode(QR, points);
+            Log.i(TAG, "Attempting QR Code Scan");
+            points = new Mat();
+            data = detector.detectAndDecode(QR, points);
+        }
 
         int iters = 0, iter_max = 10;
-        while(points.empty() && iters < iter_max){
+        while(points.empty() && iters < iter_max && !skipQRread){
             Log.i(TAG, "No QR found. Trying again [" + iters + "]");
             points = new Mat();
             data = detector.detectAndDecode(QR, points);
@@ -339,13 +326,13 @@ public class YourService extends KiboRpcService {
         }
 
         String RET_STRING;
-        if(!points.empty()) {
+        if(!points.empty() && !skipQRread) {
             Log.i(TAG, "Scanned QR Code and got data: " + data);
             RET_STRING = map.get(data);
         } else {
             Log.i(TAG, "Scanned QR Code and got data: null");
 
-            Random r = new Random(); // failsafe system -- 1 in 6 chance, right?!
+            Random r = new Random(); // failsafe system
             String randomGenQRTag = keys[r.nextInt(keys.length)];
 
             Log.i(TAG, "QR Scan failed, reporting data: " + randomGenQRTag);
@@ -458,10 +445,6 @@ public class YourService extends KiboRpcService {
             if(activeTargets.contains(1)) activeTargets.remove(activeTargets.indexOf(1));
             if(activeTargets.contains(2)) activeTargets.remove(activeTargets.indexOf(2));
             targetToHit = activeTargets.get(0);
-            return targetToHit; }
-
-        if(activeTargets.contains(4) && phase == 3) {
-            targetToHit = 4;
             return targetToHit; }
 
         if(targetToHit == 4 && phase != 3) {
