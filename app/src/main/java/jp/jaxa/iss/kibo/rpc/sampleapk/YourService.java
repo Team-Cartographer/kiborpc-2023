@@ -10,6 +10,7 @@ import java.util.Random;
 import gov.nasa.arc.astrobee.Result;
 import gov.nasa.arc.astrobee.types.Point;
 import gov.nasa.arc.astrobee.types.Quaternion;
+import gov.nasa.arc.astrobee.Kinematics;
 
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
@@ -33,12 +34,10 @@ public class YourService extends KiboRpcService {
 
     Mat camMat, distCoeff;
 
+    List<Integer> activeTargets;
     SparseArray<Coordinate> targetList;
     SparseArray<List<Integer>> parentIDInfo;
     SparseIntArray pointMap;
-    List<Integer>
-            activeTargets,
-            tempActiveTargets = new ArrayList<>();
 
     String mQrContent = "No QR Content could be found.";
     int currParent = 0;
@@ -61,88 +60,57 @@ public class YourService extends KiboRpcService {
 
         // get QR code content
         Log.i(TAG, "Heading to QR Code");
-        moveTo(targetList.get(7), false, true);
+        moveTo(targetList.get(7), false, true); // Time Cost: 1m10s
         Log.i(TAG, "QR Content: " + mQrContent);
 
         // move to targets and maximize points per phase
         while(api.getTimeRemaining().get(1) > 60000 && phase <= 3) {
-            if(api.getTimeRemaining().get(1) <= 65000 && phase == 3) {
+            Log.i(TAG, "Entered phase #" + phase);
+            int targetToHit = 0;
+
+            if(api.getTimeRemaining().get(1) <= 60000 && phase == 3) {
                 Log.i(TAG, "Breaking loop to prioritize time");
                 break;
             }
 
-            if(tempActiveTargets.size() != 0) {
-                activeTargets = tempActiveTargets;
-            } else { activeTargets = api.getActiveTargets(); }
-            int targetToHit = 0;
-
+            activeTargets = api.getActiveTargets();
             Log.i(TAG, "Active Targets: " + activeTargets.toString());
 
-            // *** STRATEGY IMPLEMENTATION ***
+            targetToHit = ListUtils.findMaxFromMap(activeTargets, pointMap);
+
             if(activeTargets.size() > 1) {
-                SparseIntArray activesToParents = new SparseIntArray();
-                for(int target : activeTargets)
-                    activesToParents.put(target, targetList.get(target).getParent().parentID);
-
-                int maxTarget = ListUtils.findMaxFromMap(activeTargets, pointMap);
-                int temp = maxTarget;
-
-                if(maxTarget == 2){
-                    Log.i(TAG, "Used Strat One");
+                if(phase == 3 && (targetToHit == 1 || targetToHit == 2)) {
+                    if(activeTargets.contains(1)) activeTargets.remove(activeTargets.indexOf(1));
+                    if(activeTargets.contains(2)) activeTargets.remove(activeTargets.indexOf(2));
+                    targetToHit = activeTargets.get(0);
+                } else if(targetToHit == 4 && phase != 3) {
+                    activeTargets.remove(activeTargets.indexOf(4));
+                    targetToHit = activeTargets.get(0);
+                } else if(targetToHit == 2) {
                     activeTargets.remove(activeTargets.indexOf(2));
-                    maxTarget = activeTargets.get(0);
+                    targetToHit = activeTargets.get(0);
+                } else if(activeTargets.contains(3) && targetToHit != 3) {
+                    targetToHit = 3;
+                } else if(activeTargets.contains(4) && phase == 3) {
+                    targetToHit = 4;
                 }
-
-                if(phase == 3 && (maxTarget == 1 || maxTarget == 2)){
-                    Log.i(TAG, "Used Strat Two");
-                    int[] others = {3, 4, 5, 6};
-                    if(ListUtils.containsAny(activeTargets, others)){
-                        if(activeTargets.contains(1))
-                            activeTargets.remove(activeTargets.indexOf(1));
-                        else if(activeTargets.contains(2))
-                            activeTargets.remove(activeTargets.indexOf(2));
-
-                        maxTarget = activeTargets.get(0);
-                    }
-                    else
-                        break;
-                }
-
-                if(phase == 2 && ListUtils.sameMapValues(activesToParents)){
-                    Log.i(TAG, "Used Strat Three");
-                    activeTargets.remove(activeTargets.indexOf(maxTarget));
-                    tempActiveTargets.addAll(activeTargets);
-                }
-
-                targetToHit = maxTarget;
-                Log.i(TAG, "Used Max Target #" + temp + ": " + (temp == targetToHit));
-
-            } else {
-                targetToHit = activeTargets.get(0);
-                Log.i(TAG, "No Strat Needed");
             }
-            // *******************************
 
+            if(api.getTimeRemaining().get(1) < 60000) break;
             Log.i(TAG, "Going for target #" + targetToHit);
-
-            if(api.getTimeRemaining().get(1) <= 60000) {
-                Log.i(TAG, "Breaking loop to prioritize time.");
-                break;
-            }
 
             // move to target given by strategy
             moveTo(targetList.get(targetToHit), true, false);
-            Log.i(TAG, "Time Remaining After Target" + targetToHit + ": " +
-                    api.getTimeRemaining().get(1));
 
-            if(tempActiveTargets.size() > 0)
-                tempActiveTargets.clear();
+            Log.i(TAG, "Time Remaining After Target #" + targetToHit + ": " +
+                    api.getTimeRemaining().get(1) + "ms");
 
             phase++;
         }
+        Log.i(TAG, "Broke out of loop");
 
         // notify that astrobee is heading to the goal
-        api.notifyGoingToGoal();
+        api.notifyGoingToGoal(); // Time Cost: 40s
         moveTo(targetList.get(8), false, false);
 
         // send mission completion
@@ -151,8 +119,31 @@ public class YourService extends KiboRpcService {
         api.reportMissionCompletion(mQrContent);
     }
 
+
+    /** Rename to runPlan1() for testing */
     @Override
-    protected void runPlan2(){ /* write your plan 2 here */ }
+    protected void runPlan2(){
+        long startTime = System.currentTimeMillis();
+
+        api.startMission();
+        Kinematics kmts = api.getRobotKinematics();
+        Point cPt = kmts.getPosition();
+        Log.i(TAG,
+                "Start Location: (" + cPt.getX() + ", " + cPt.getY() + ", " + cPt.getZ() + ")");
+        initCam(SIM);
+        initMaps();
+
+        // test new parent movement inheritance
+        moveTo(targetList.get(2), false, false);
+        moveTo(targetList.get(3), false, false);
+        moveTo(targetList.get(1), false, false);
+
+        api.notifyGoingToGoal();
+        moveTo(targetList.get(8), false, false);
+        long deltaTime = System.currentTimeMillis() - startTime;
+        Log.i(TAG, "runPlan1() executed in: " + deltaTime/1000 + "s.");
+        api.reportMissionCompletion(mQrContent);
+    }
 
     @Override
     protected void runPlan3(){ /* write your plan 3 here */ }
@@ -168,7 +159,8 @@ public class YourService extends KiboRpcService {
     private int moveTo(Coordinate coordinate, boolean scanTag, boolean QR){
         int target = targetList.indexOfValue(coordinate);
 
-        if(coordinate.hasParent() && (target != 4)) {
+        if(coordinate.hasParent() &&
+                !parentIDInfo.get(coordinate.getParent().parentID).contains(target)) {
             Coordinate parent = coordinate.getParent();
             moveTo(parent, false, false);
             currParent = parent.parentID;
@@ -187,9 +179,7 @@ public class YourService extends KiboRpcService {
             Coordinate parent = coordinate.getParent();
             moveTo(parent, false, false);
             currParent = parent.parentID;
-            Log.i(TAG, "Current Parent ID: " + currParent);
-
-        }
+            Log.i(TAG, "Current Parent ID: " + currParent); }
 
         return target;
     }
@@ -443,12 +433,11 @@ public class YourService extends KiboRpcService {
         Log.i(TAG, "Initialized Movement SparseArray");
 
         parentIDInfo = new SparseArray<>();
-        List<Integer> one_two = new ArrayList<Integer>(){{add(1); add(2);}};
-        List<Integer> three_five_six_qr = new ArrayList<Integer>(){{add(3); add(5); add(6); add(7);}};
-        List<Integer> four_goal = new ArrayList<Integer>(){{add(4); add(8);}};
-        parentIDInfo.put(1, one_two);
-        parentIDInfo.put(2, three_five_six_qr);
-        parentIDInfo.put(3, four_goal);
+        List<Integer> _12356QR_ = new ArrayList<Integer>(){{
+            add(1); add(2); add(3); add(5); add(6); add(7);}};
+        List<Integer> _4G_ = new ArrayList<Integer>(){{add(4); add(8);}};
+        parentIDInfo.put(1, _12356QR_);
+        parentIDInfo.put(2, _4G_);
         Log.i(TAG, "Initialized Parent ID SparseArray");
 
         pointMap = new SparseIntArray();
@@ -469,5 +458,5 @@ public class YourService extends KiboRpcService {
             e.printStackTrace();
         }
     }
-
+    
 }

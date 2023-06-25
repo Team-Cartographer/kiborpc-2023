@@ -11,63 +11,58 @@ import gov.nasa.arc.astrobee.types.Quaternion;
 class Constants {
     
     /*PARENT MOVEMENTS***/
-     private static final Coordinate parentOneTwo = new Coordinate(
-            new Point(10.463, -9.173, 5.25), new Quaternion(0, 0, 0, 0),
+    private static final Coordinate parent12356QR = new Coordinate(
+            new Point(11.453, -8.552, 5.25), new Quaternion(0, 0, 0, 0),
             1
-     );
-    
-     private static final Coordinate parentFourGoal = new Coordinate(
+    );
+
+    private static final Coordinate parent4G = new Coordinate(
              new Point(10.51, -6.7185, 5.25), new Quaternion(0, 0, 0, 0),
              2
-     );
+    );
 
-     private static final Coordinate parentThreeFiveSixQR = new Coordinate(
-             new Point(11.453, -8.552, 5.25), new Quaternion(0, 0, 0, 0),
-             3
-     );
-    
      /*TARGET MOVEMENTS***/
      static final Coordinate start = new Coordinate(
-            new Point(10.4, -10, 4.4), new Quaternion(0, 0, 0, 0), 0
+             new Point(10.281791377069263, -9.820110053581466, 4.293233254462052), new Quaternion(0, 0, 0, 0), 0
      );
 
      static final Coordinate targetOne = new Coordinate(
              new Point(11.225, -9.923, 5.469), new Quaternion(0, 0, -0.707f, 0.707f),
-             parentOneTwo
+             parent12356QR
      );
 
      static final Coordinate targetTwo = new Coordinate(
              new Point(10.463, -9.173, 4.48), new Quaternion(0.5f, 0.5f, -0.5f, 0.5f),
-             parentOneTwo
+             parent12356QR
      );
 
      static final Coordinate targetThree = new Coordinate(
             new Point(10.71, -7.75, 4.48), new Quaternion(0, 0.707f, 0, 0.707f),
-             parentThreeFiveSixQR
+             parent12356QR
      );
 
      static final Coordinate targetFour = new Coordinate(
              new Point(10.485, -6.615, 5.17), new Quaternion(0, 0, -1, 0),
-             parentFourGoal
+             parent4G
      );
 
      static final Coordinate targetFive = new Coordinate(
              new Point(11.037, -7.902, 5.312), new Quaternion(-0.5f, -0.5f, -0.5f, 0.5f),
-             parentThreeFiveSixQR
+             parent12356QR
      );
 
      static final Coordinate targetSix = new Coordinate(
              new Point(11.307, -9.038, 4.931), new Quaternion(0, 0, 0, 1),
-             parentThreeFiveSixQR
+             parent12356QR
      );
 
      static final Coordinate targetQR = new Coordinate(
              new Point(11.369, -8.5518, 4.40), new Quaternion(0.707f, 0f, -0.707f, 0f),
-             parentThreeFiveSixQR
+             parent12356QR
      );
      static final Coordinate goal = new Coordinate(
              new Point(11.143, -6.7607, 4.9654), new Quaternion(0, 0, -0.707f, 0.707f),
-             parentFourGoal
+             parent4G
      );
     
     /*TARGET IDS**/
@@ -93,7 +88,6 @@ class Coordinate {
         quaternion = qt;
         has_parent = false;
         parentID = pID;
-
     }
     
     Coordinate(Point pt, Quaternion qt, Coordinate prt){
