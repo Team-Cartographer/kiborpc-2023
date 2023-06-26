@@ -1,9 +1,9 @@
 <div align=center> 
 <h1><b>4th Kibo Robot Programming Challenge</b></h1>
   <p align=center>
-    <a href=app/src/main/java/jp/jaxa/iss/kibo/rpc/sampleapk/><img src="https://img.shields.io/badge/build-passing-dark_green" alt="Build Passing"></a>
-    <a href="mailto:ADCTeamCartographer@gmail.com"><img src="https://img.shields.io/badge/contact-email-E1306C" alt="e-mail"></a>
+    <a href="mailto:ADCTeamCartographer@gmail.com"><img src="https://img.shields.io/badge/contact-adcteamcartographer@gmail.com-E1306C" alt="e-mail"></a>
     <a href=""><img src="https://img.shields.io/badge/discord-@abh1a-7289da" alt="discord"></a>
+    <a href=app/src/main/java/jp/jaxa/iss/kibo/rpc/sampleapk/><img src="https://img.shields.io/badge/build-passing-dark_green" alt="Build Passing"></a>
 </div>
 
 
