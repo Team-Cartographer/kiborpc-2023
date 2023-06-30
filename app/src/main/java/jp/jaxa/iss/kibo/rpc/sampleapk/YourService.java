@@ -25,9 +25,7 @@ import android.util.Log;
 import android.util.SparseArray;
 import android.util.SparseIntArray;
 
-/**
- * Class meant to handle commands from the Ground Data System and execute them in Astrobee
- */
+/** Class meant to handle commands from the Ground Data System and execute them in Astrobee */
 @SuppressWarnings("SpellCheckingException")
 public class YourService extends KiboRpcService {
 
