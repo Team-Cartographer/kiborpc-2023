@@ -9,7 +9,8 @@
 
 ## Introduction
 <u>Team Cartographer's submission to the 2023 [`Kibo Robot Programming Challenge`](https://jaxa.krpc.jp/)</a></u><br>
---> For more information about the challenge, please refer to the Guidebook, Rulebook, or Programming Manual at <a href=https://jaxa.krpc.jp/download>this link</a>
+--> For more information about the challenge, please refer to the Guidebook, Rulebook, or Programming Manual at <a href=https://jaxa.krpc.jp/download>this link</a><br>
+--> Won Top 10 US Team <br>
 
 For the code, go to <a href=app/src/main/java/jp/jaxa/iss/kibo/rpc/sampleapk>app/src/main/java/jp/jaxa/iss/kibo/rpc/sampleapk</a><br>
 
