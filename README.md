@@ -27,5 +27,5 @@ Thank you for reading!
 <li>NASA and NASA Office of Stem Engagement</li>
 <li>JAXA and Kibo/Astrobee Teams</u></li>
 
-## Other Projects
-<a href="https://github.com/abhi-arya1/cartographerADC23"> We won the 2023 National NASA App Development Challenge</a>
+## Other Team Cartographer Projects 
+<a href="https://github.com/abhi-arya1/cartographerADC23">2023 NASA App Development Challenge</a> - Top 3 Nationwide 
