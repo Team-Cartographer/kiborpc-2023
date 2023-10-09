@@ -27,6 +27,6 @@ Thank you for reading!
 <li>NASA and NASA Office of Stem Engagement</li>
 <li>JAXA and Kibo/Astrobee Teams</u></li>
 
-## Other Team Cartographer Projects 
-<a href="https://github.com/abhi-arya1/cartographerADC23">2023 NASA App Development Challenge</a> - Top 3 Nationwide <br>
-<a href="https://github.com/Turfader/Team-Cartographer-Space-Apps-Challenge-2023">2023 NASA Space Apps Challenge: The Oracle of DSCOVR</a> - Upcoming
+<h3>
+  Other Team Cartographer Projects can be found at the <a href="https://github.com/Team-Cartographer">Team Cartographer GitHub Teams Page</a>
+</h3>
